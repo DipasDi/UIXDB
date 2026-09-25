@@ -66,13 +66,15 @@ func SendConsole(c *gin.Context) {
 				return
 			}
 
-			for rows.Next() {
-				values := make([]any, len(cols))
-				scanArgs := make([]any, len(cols))
-				for idx := range values {
-					scanArgs[idx] = &values[idx]
-				}
+			values := make([]any, len(cols))
+			scanArgs := make([]any, len(cols))
+			for idx := range values {
+				scanArgs[idx] = &values[idx]
+			}
 
+			allRows = append(allRows, cols)
+
+			for rows.Next() {
 				if err := rows.Scan(scanArgs...); err != nil {
 					rows.Close()
 					c.JSON(http.StatusInternalServerError, gin.H{

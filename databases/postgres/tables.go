@@ -98,8 +98,6 @@ func GetPK(c *gin.Context) {
 	for rows.Next() {
 		var k Key
 
-		// 1. Порядок строго как в SELECT:
-		// fk_name -> from_table -> from_column -> to_table -> to_column
 		err := rows.Scan(&k.FkName, &k.FromTable, &k.FromColumn, &k.ToTable, &k.ToColumn)
 		if err != nil {
 			log.Println("scan error:", err)
@@ -107,11 +105,10 @@ func GetPK(c *gin.Context) {
 			return
 		}
 
-		// 2. В fmt.Sprintf передаем БЕЗ знака &
 		relations = append(relations, Relation{
 			ID:   k.FkName,
-			From: fmt.Sprintf("%s.%s", k.FromTable, k.FromColumn), // "bookmarks.user_id"
-			To:   fmt.Sprintf("%s.%s", k.ToTable, k.ToColumn),     // "users.id"
+			From: fmt.Sprintf("%s.%s", k.FromTable, k.FromColumn),
+			To:   fmt.Sprintf("%s.%s", k.ToTable, k.ToColumn),
 		})
 	}
 
