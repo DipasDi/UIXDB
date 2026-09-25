@@ -20,6 +20,7 @@ func main() {
 	r.POST("/api/connect", database.InitDB)
 	r.GET("/api/getKey", database.GetPK)
 	r.POST("/api/query", database.SendConsole)
+	r.POST("/api/table", database.GetTable)
 
 	if err := r.Run("0.0.0.0:8082"); err != nil {
 		log.Fatalf("failed to run server: %v", err)

@@ -721,6 +721,27 @@ const $$ = s => [...document.querySelectorAll(s)];
 const esc = v => String(v ?? "NULL").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
+// Разбирает "table.column" или "schema.table.column" на [table, column] —
+// берёт последние два сегмента, чтобы не ломаться если сервер вернёт имя со схемой.
+function splitQualified(q){
+  const parts = String(q || "").trim().split(".");
+  return [parts[parts.length - 2], parts[parts.length - 1]];
+}
+
+/**
+ * Ищет таблицу в DB по имени. Сначала прямое совпадение, затем без учёта регистра,
+ * затем по последнему сегменту (если в имени есть схема).
+ */
+function findTable(name){
+  if(!name) return null;
+  if(DB[name]) return name;
+  const lower = name.toLowerCase();
+  const exact = Object.keys(DB).find(k => k.toLowerCase() === lower);
+  if(exact) return exact;
+  const last = name.split('.').pop().toLowerCase();
+  return Object.keys(DB).find(k => k.split('.').pop().toLowerCase() === last);
+}
+
 /*I18N DICTIONARY & LOGIC*/
 let currentLang = "en";
 
@@ -752,6 +773,7 @@ const I18N = {
     colsCount: "columns",
     changesSavedApi: "Changes saved via API",
     noDataRows: "No rows.",
+    loadingRows: "Loading rows…",
     erdTab: "ERD",
     diffTab: "SQL Diff",
     fitDiagram: "Fit",
@@ -823,6 +845,7 @@ const I18N = {
     colsCount: "колонок",
     changesSavedApi: "Изменения сохраняются через API",
     noDataRows: "Нет строк.",
+    loadingRows: "Загрузка строк…",
     erdTab: "ERD",
     diffTab: "SQL Diff",
     fitDiagram: "Вписать",
@@ -1107,7 +1130,6 @@ function apiBase(){
 
 async function request(path, statements = [], extra = {}){
   const url = apiBase() + path;
-  // Передаем только statements (и extra, если переданы дополнительные параметры вроде Key)
   const payload = { statements, ...extra };
   const started = performance.now();
 
@@ -1138,6 +1160,7 @@ async function loadKey(){
   if(!res.ok) throw new Error(`HTTP ${res.status}`);
 
   const raw = await res.json();
+  console.log("[UIXDB] /getKey raw response:", raw); // <-- отладка
   const schema = normalizeSchemaResponse(raw);
   if(!schema) throw new Error(t("serverNoTables"));
 
@@ -1147,6 +1170,72 @@ async function loadKey(){
 
 const relationsKey = () =>
   RELATIONS.filter(r => !r.removed).map(({ id, from, to }) => ({ id, from, to }));
+
+/**
+ * Загружает строки одной таблицы через POST /api/table.
+ */
+async function loadTableData(tableName){
+  const url = apiBase() + "/table";
+  const started = performance.now();
+  try{
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(tableName)
+    });
+    const text = await res.text();
+    let json = null;
+    try{ json = text ? JSON.parse(text) : null; }catch{ json = null; }
+    if(!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
+
+    const elapsed = (performance.now() - started).toFixed(1);
+    addLog(`${new Date().toLocaleTimeString()} POST ${url} "${tableName}" → ${res.status} (${elapsed}ms)`);
+
+    const allRows = Array.isArray(json?.rows) ? json.rows : [];
+    const header = allRows[0] || [];
+    const body = allRows.slice(1);
+
+    if(!DB[tableName]){
+      DB[tableName] = {
+        x: 60, y: 60, isNew: false, deleted: false,
+        columns: header.map(n => ({ name: n, originalName: n, type: "text", primary: false, isNew: false, deleted: false }))
+      };
+    }
+
+    const cols = DB[tableName].columns.filter(c => !c.deleted);
+    const idxByName = {};
+    header.forEach((h, i) => { idxByName[h] = i; });
+
+    ROWS[tableName] = body.map(row =>
+      cols.map(c => {
+        const i = idxByName[c.name];
+        const v = i === undefined ? null : row[i];
+        return v === "NULL" ? null : v;
+      })
+    );
+
+    return ROWS[tableName];
+  }catch(err){
+    addLog(`${new Date().toLocaleTimeString()} POST ${url} ERROR: ${err.message}`);
+    throw err;
+  }
+}
+
+async function selectTable(name){
+  if(!name || !DB[name]) return;
+  currentTable = name;
+  saveViewSettings();
+  if(currentView !== "data") setView("data");
+  renderSidebar();
+  const grid = $("#dataGrid");
+  if(grid) grid.innerHTML = `<div class="empty">${t("loadingRows")}</div>`;
+  try{
+    await loadTableData(name);
+  }catch(err){
+    toast(`Error: ${err.message}`);
+  }
+  renderAll();
+}
 
 async function connectDatabase(e){
   e.preventDefault();
@@ -1185,6 +1274,7 @@ async function connectDatabase(e){
     });
 
     const result = await res.json().catch(() => ({}));
+    console.log("[UIXDB] /connect response:", result); // <-- отладка
     if(!res.ok) throw new Error(result.error || `HTTP ${res.status}`);
 
     const exIdx = savedConnections.findIndex(c => c.id === cfg.id || c.name.toLowerCase() === cfg.name.toLowerCase());
@@ -1197,9 +1287,11 @@ async function connectDatabase(e){
     activeConnection = cfg.name;
     connectionConfig = cfg;
 
+    // Пытаемся загрузить схему из ответа /connect
     const schema = normalizeSchemaResponse(result);
     if(schema) importSchema(schema);
 
+    // Дополнительно загружаем через /getKey, чтобы получить актуальные связи
     await loadKey().catch(err => addLog("getKey: " + err.message));
 
     saveConnectionSettings();
@@ -1428,12 +1520,12 @@ function buildSchemaSQL(){
 
   for(const r of RELATIONS){
     if(r.isNew && !r.removed){
-      const [fT, fC] = r.from.split(".");
-      const [tT, tC] = r.to.split(".");
+      const [fT, fC] = splitQualified(r.from);
+      const [tT, tC] = splitQualified(r.to);
       out.push(`ALTER TABLE "${fT}" ADD CONSTRAINT "${r.id}" FOREIGN KEY ("${fC}") REFERENCES "${tT}" ("${tC}") ON DELETE CASCADE;`);
     }
     if(r.removed && !r.isNew){
-      const [fT] = r.from.split(".");
+      const [fT] = splitQualified(r.from);
       out.push(`ALTER TABLE "${fT}" DROP CONSTRAINT IF EXISTS "${r.id}";`);
     }
   }
@@ -1464,14 +1556,12 @@ function layoutTables(){
 
 function endpointFor(qualified, side){
   if(!qualified || !qualified.includes(".")) return null;
-  const [tName, cName] = qualified.trim().split(".");
+  const [tName, cName] = splitQualified(qualified);
 
-  // Поиск таблицы без учета регистра
-  const actualTableName = Object.keys(DB).find(k => k.toLowerCase() === tName.toLowerCase());
+  const actualTableName = findTable(tName);
   if(!actualTableName) return null;
   const table = DB[actualTableName];
 
-  // Поиск колонки без учета регистра
   const idx = table.columns.findIndex(c => c.name.toLowerCase() === cName.toLowerCase());
   if(idx < 0) return null;
 
@@ -1527,21 +1617,36 @@ function renderLinks(){
 
   const paths = [];
 
+  console.log(`[UIXDB] renderLinks: ${RELATIONS.length} relations, tables: ${Object.keys(DB).join(', ')}`);
+
   for(const r of RELATIONS){
-    if(r.removed || !r.from || !r.to) continue;
+    if(r.removed || !r.from || !r.to){
+      if(!r.removed) console.warn("[UIXDB] relation skipped (empty from/to):", r);
+      continue;
+    }
 
-    const [fromT] = r.from.split(".");
-    const [toT] = r.to.split(".");
+    const [fromT] = splitQualified(r.from);
+    const [toT] = splitQualified(r.to);
 
-    const actualFrom = Object.keys(DB).find(k => k.toLowerCase() === fromT.toLowerCase());
-    const actualTo = Object.keys(DB).find(k => k.toLowerCase() === toT.toLowerCase());
-    if(!actualFrom || !actualTo) continue;
+    const actualFrom = findTable(fromT);
+    const actualTo = findTable(toT);
+    if(!actualFrom || !actualTo){
+      console.warn(`[UIXDB] relation "${r.id}" skipped: table not found`, { fromT, toT, actualFrom, actualTo, knownTables: Object.keys(DB) });
+      continue;
+    }
 
     const A = DB[actualFrom], B = DB[actualTo];
     const fromRight = A.x <= B.x;
     const start = endpointFor(r.from, fromRight ? "right" : "left");
     const end = endpointFor(r.to, fromRight ? "left" : "right");
-    if(!start || !end) continue;
+    if(!start || !end){
+      console.warn(`[UIXDB] relation "${r.id}" skipped: column not found`, {
+        from: r.from, to: r.to, start, end,
+        fromCols: DB[actualFrom]?.columns?.map(c => c.name),
+        toCols: DB[actualTo]?.columns?.map(c => c.name)
+      });
+      continue;
+    }
 
     const dir = fromRight ? 1 : -1;
     const bend = Math.max(50, Math.abs(end.x - start.x) * .45);
@@ -1705,7 +1810,7 @@ window.addEventListener("pointerup", event => {
       if(tCol){
         const targetName = `${tTable}.${tCol.name}`;
         if(connectionDrag.source !== targetName && !RELATIONS.some(r => r.from === connectionDrag.source && r.to === targetName && !r.removed)){
-          const [sTable, sCol] = connectionDrag.source.split(".");
+          const [sTable, sCol] = splitQualified(connectionDrag.source);
           let id = `fk_${sTable}_${sCol}`;
           if(RELATIONS.some(r => r.id === id)) id += `_${uid++}`;
           RELATIONS.push({
@@ -1895,34 +2000,28 @@ function restoreSchema(){
   renderAll();
 }
 
-async function loadKey(){
-  const url = apiBase() + "/getKey";
-  const res = await fetch(url, { headers: { "Accept": "application/json" } });
-  addLog(`${new Date().toLocaleTimeString()} GET ${url} → ${res.status}`);
-  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+async function applyChanges(){
+  const dataMode = currentView === "data";
+  const stmts = dataMode ? buildDataSQL() : buildSchemaSQL();
+  if(!stmts.length) return;
 
-  const data = await res.json();
-  console.log("[UIXDB] Ответ от getKey:", data);
-
-
-  const list = Array.isArray(data.Key) ? data.Key
-             : Array.isArray(data.relations) ? data.relations
-             : Array.isArray(data.Relations) ? data.Relations
-             : (Array.isArray(data) ? data : []);
-
-  RELATIONS = list.map(r => ({
-    id: r.id || `fk_${uid++}`,
-    from: r.from,
-    to: r.to,
-    isNew: false,
-    removed: false
-  })).filter(r => r.from && r.to);
-
-  console.log(`[UIXDB] Загружено связей: ${RELATIONS.length}`, RELATIONS);
-
-  snapshotSchema();
-  renderDiagram();
-  return RELATIONS;
+  try{
+    $("#applyChanges").disabled = true;
+    await request(dataMode ? "/data" : "/schema", stmts, dataMode ? {} : { action: "apply", Key: relationsKey() });
+    if(dataMode){
+      applyDataLocally();
+    }else{
+      RELATIONS = RELATIONS.filter(r => !r.removed);
+      RELATIONS.forEach(r => { r.isNew = false; });
+      await loadKey().catch(() => snapshotSchema());
+    }
+    toast(t("appliedCount", { count: stmts.length }));
+  }catch(e){
+    toast(`Error: ${e.message}`);
+  }finally{
+    $("#applyChanges").disabled = false;
+    renderAll();
+  }
 }
 
 function applyDataLocally(){
@@ -2006,34 +2105,41 @@ function startCellEdit(cell){
 }
 
 function importSchema(data){
-  if(!data || !Array.isArray(data.tables)) return;
-  DB = {};
-  ROWS = {};
-  RELATIONS = [];
+  if(!data) return;
 
-  for(const [idx, tName] of data.tables.entries()){
-    DB[tName.name] = {
-      x: 60 + (idx % 3) * 350,
-      y: 60 + Math.floor(idx / 3) * 280,
-      isNew: false,
-      deleted: false,
-      columns: (tName.columns || []).map(c => ({
-        name: c.name,
-        originalName: c.name,
-        type: c.type || "text",
-        primary: Boolean(c.primary || c.pk),
+  console.log("[UIXDB] importSchema called with:", data); // <-- отладка
+
+  // Если есть таблицы — обновляем DB и ROWS
+  if(Array.isArray(data.tables) && data.tables.length > 0){
+    DB = {};
+    ROWS = {};
+
+    for(const [idx, tName] of data.tables.entries()){
+      DB[tName.name] = {
+        x: 60 + (idx % 3) * 350,
+        y: 60 + Math.floor(idx / 3) * 280,
         isNew: false,
-        deleted: false
-      }))
-    };
-    ROWS[tName.name] = tName.rows || [];
+        deleted: false,
+        columns: (tName.columns || []).map(c => ({
+          name: c.name,
+          originalName: c.name,
+          type: c.type || "text",
+          primary: Boolean(c.primary || c.pk),
+          isNew: false,
+          deleted: false
+        }))
+      };
+      ROWS[tName.name] = tName.rows || [];
+    }
+
+    layoutTables();
+    restoreTablePositions();
+    currentTable = DB[currentTable] ? currentTable : Object.keys(DB)[0] || null;
   }
 
-  layoutTables();
-  restoreTablePositions();
-  currentTable = DB[currentTable] ? currentTable : Object.keys(DB)[0] || null;
-
+  // Если есть связи — обновляем RELATIONS (не сбрасываем, если их нет)
   if(Array.isArray(data.relations)){
+    console.log("[UIXDB] importSchema relations:", data.relations); // <-- отладка
     RELATIONS = data.relations.map(r => ({
       id: r.id || `fk_${uid++}`,
       from: r.from,
@@ -2044,6 +2150,7 @@ function importSchema(data){
   }
 
   snapshotSchema();
+  console.log(`[UIXDB] importSchema done: ${Object.keys(DB).length} таблиц, ${RELATIONS.length} связей`, { tables: Object.keys(DB), relations: RELATIONS });
   renderAll();
   if(!Object.keys(readSettings().positions?.[connectionKey()] || {}).length){
     requestAnimationFrame(fitDiagram);
@@ -2053,29 +2160,42 @@ function importSchema(data){
 function normalizeSchemaResponse(data){
   if(!data) return null;
 
+  // Извлекаем связи из data.relations или data.Key
   const relations = Array.isArray(data.relations) ? data.relations
                   : Array.isArray(data.Key)       ? data.Key
                   : [];
 
+  console.log("[UIXDB] normalizeSchemaResponse: relations found:", relations.length, relations); // <-- отладка
+
+  // Если есть tables — возвращаем вместе со связями
   if(Array.isArray(data.tables)){
     return { tables: data.tables, relations };
   }
 
-  const map = data.tables || data.table?.TablesMap || data.table?.tablesMap || data.tablesMap;
-  if(!map || typeof map !== "object") return null;
-
-  return {
-    tables: Object.entries(map).map(([name, cols]) => ({
-      name,
-      columns: (Array.isArray(cols) ? cols : []).map(c => ({
-        name: c.name,
-        type: c.type || "text",
-        primary: Boolean(c.pk ?? c.primary)
+  // Ищем tables в разных форматах
+  const map = data.tables || data.TablesMap || data.table?.TablesMap || data.table?.tablesMap || data.tablesMap;
+  if(map && typeof map === "object"){
+    return {
+      tables: Object.entries(map).map(([name, cols]) => ({
+        name,
+        columns: (Array.isArray(cols) ? cols : []).map(c => ({
+          name: c.name,
+          type: c.type || "text",
+          primary: Boolean(c.pk ?? c.primary)
+        })),
+        rows: []
       })),
-      rows: []
-    })),
-    relations
-  };
+      relations
+    };
+  }
+
+  // Если tables нет, но есть связи — возвращаем пустые tables с relations,
+  // чтобы importSchema обновил только связи (таблицы уже загружены)
+  if(relations.length > 0){
+    return { tables: [], relations };
+  }
+
+  return null;
 }
 
 /* VIEWS & SIDEBAR*/
@@ -2118,13 +2238,36 @@ function renderAll(){
 function setView(view){
   currentView = view;
   const views = ["query", "data", "diagram"];
-  $("#viewSwitcher").style.setProperty("--index", views.indexOf(view));   $$("#viewSwitcher button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  $("#viewSwitcher").style.setProperty("--index", views.indexOf(view));
+  $$("#viewSwitcher button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
   $("#queryView").classList.toggle("active", view === "query");
   $("#dataView").classList.toggle("active", view === "data");
-  $("#diagramView").classList.toggle("active", view === "diagram");   if(view === "diagram") requestAnimationFrame(renderDiagram);   updatePendingUI();   saveViewSettings(); }  function setDiagramView(view){   currentDiagramView = view;   $$(".diagram-tabs button").forEach(b => b.classList.toggle("active", b.dataset.diagramView === view));
+  $("#diagramView").classList.toggle("active", view === "diagram");
+  if(view === "diagram") requestAnimationFrame(renderDiagram);
+  updatePendingUI();
+  saveViewSettings();
+}
+
+function setDiagramView(view){
+  currentDiagramView = view;
+  $$(".diagram-tabs button").forEach(b => b.classList.toggle("active", b.dataset.diagramView === view));
   $("#canvas").style.display = view === "erd" ? "" : "none";
   $("#diffView").classList.toggle("visible", view === "diff");
-  $("#relationInspector").classList.remove("visible");   updatePendingUI();   saveViewSettings(); }  document.addEventListener("click", event => {   const target = event.target;    const connSelect = target.closest("[data-action='pick-conn']");   if(connSelect){     const id = connSelect.dataset.id;     const profile = savedConnections.find(c => c.id === id);     if(profile){       setFormFromConfig(profile);       $$(".saved-connection").forEach(el => el.classList.toggle("active", el.dataset.id === id));
+  $("#relationInspector").classList.remove("visible");
+  updatePendingUI();
+  saveViewSettings();
+}
+
+document.addEventListener("click", event => {
+  const target = event.target;
+
+  const connSelect = target.closest("[data-action='pick-conn']");
+  if(connSelect){
+    const id = connSelect.dataset.id;
+    const profile = savedConnections.find(c => c.id === id);
+    if(profile){
+      setFormFromConfig(profile);
+      $$(".saved-connection").forEach(el => el.classList.toggle("active", el.dataset.id === id));
     }
     return;
   }
@@ -2161,10 +2304,7 @@ function setView(view){
 
   const tBtn = target.closest("[data-select-table]");
   if(tBtn){
-    currentTable = tBtn.dataset.selectTable;
-    saveViewSettings();
-    if(currentView !== "data") setView("data");
-    renderAll();
+    selectTable(tBtn.dataset.selectTable);
     return;
   }
 
@@ -2240,7 +2380,7 @@ $("#langPicker").addEventListener("change", e => {
 
 $("#searchConnections").addEventListener("input", e => renderSavedConnections(e.target.value));
 $("#btnNewConnection").addEventListener("click", clearConnectionForm);
-$("#dataTable").addEventListener("change", e => { currentTable = e.target.value; saveViewSettings(); renderAll(); });
+$("#dataTable").addEventListener("change", e => selectTable(e.target.value));
 $("#tableSearch").addEventListener("input", renderSidebar);
 
 $("#runButton").addEventListener("click", executeQuery);
@@ -2262,6 +2402,8 @@ $("#themeButton").addEventListener("click", () => {
 $("#refreshSchema").addEventListener("click", async () => {
   try{
     await loadKey();
+    if(currentTable && DB[currentTable]) await loadTableData(currentTable).catch(() => {});
+    renderAll();
     toast(t("schemaUpdated"));
   }catch(e){
     toast(`Error: ${e.message}`);
@@ -2293,8 +2435,8 @@ $("#removeRelation").addEventListener("click", removeSelectedRelation);
 $("#relationSql").addEventListener("click", () => {
   const r = RELATIONS.find(i => i.id === selectedRelation);
   if(!r) return;
-  const [fT, fC] = r.from.split(".");
-  const [tT, tC] = r.to.split(".");
+  const [fT, fC] = splitQualified(r.from);
+  const [tT, tC] = splitQualified(r.to);
   $("#sql").value = `ALTER TABLE "${fT}" ADD CONSTRAINT "${r.id}" FOREIGN KEY ("${fC}") REFERENCES "${tT}" ("${tC}");`;
   setView("query");
   closeRelationInspector();
@@ -2305,6 +2447,8 @@ $("#sendSchema").addEventListener("click", async () => {
   if(!stmts.length) return;
   try{
     await request("/schema", stmts, { action: "apply", Key: relationsKey() });
+    RELATIONS = RELATIONS.filter(r => !r.removed);
+    RELATIONS.forEach(r => { r.isNew = false; });
     await loadKey().catch(() => snapshotSchema());
     toast(`${t("sendSchema")}: ${stmts.length} SQL`);
     renderAll();
@@ -2363,7 +2507,12 @@ function initialize(){
   updateCamera();
   setView(currentView);
   if(currentView === "diagram") setDiagramView(currentDiagramView);
-  if(connectionConfig) loadKey().catch(() => {});
+
+  if(connectionConfig){
+    loadKey()
+      .then(() => (currentTable && DB[currentTable]) ? loadTableData(currentTable).then(renderAll) : null)
+      .catch(() => {});
+  }
 }
 
 initialize();

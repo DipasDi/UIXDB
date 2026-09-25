@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 func GetTables(c *gin.Context, request ConnectionRequest) Tables {
@@ -120,5 +121,89 @@ func GetPK(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"connected": true,
 		"Key":       relations,
+	})
+}
+
+func GetTable(c *gin.Context) {
+	if PostgreConnect == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Database connection is not initialized",
+		})
+		return
+	}
+
+	var tableName string
+
+	if err := c.ShouldBindJSON(&tableName); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request payload: " + err.Error(),
+		})
+		return
+	}
+
+	var allRows [][]string
+
+	query := fmt.Sprintf("SELECT * FROM %s LIMIT 200;", pq.QuoteIdentifier(tableName))
+
+	rows, err := PostgreConnect.Query(query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Query execution failed: " + err.Error(),
+		})
+		return
+	}
+
+	cols, err := rows.Columns()
+	if err != nil {
+		rows.Close()
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to retrieve columns: " + err.Error(),
+		})
+		return
+	}
+
+	values := make([]any, len(cols))
+	scanArgs := make([]any, len(cols))
+	for idx := range values {
+		scanArgs[idx] = &values[idx]
+	}
+
+	allRows = append(allRows, cols)
+
+	for rows.Next() {
+		if err := rows.Scan(scanArgs...); err != nil {
+			rows.Close()
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to scan row: " + err.Error(),
+			})
+			return
+		}
+
+		rowStrings := make([]string, len(cols))
+		for idx, val := range values {
+			switch v := val.(type) {
+			case nil:
+				rowStrings[idx] = "NULL"
+			case []byte:
+				rowStrings[idx] = string(v)
+			default:
+				rowStrings[idx] = fmt.Sprint(v)
+			}
+		}
+
+		allRows = append(allRows, rowStrings)
+	}
+
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Row iteration error: " + err.Error(),
+		})
+		return
+	}
+	rows.Close()
+
+	c.JSON(http.StatusOK, gin.H{
+		"rows": allRows,
 	})
 }
