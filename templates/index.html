@@ -1,0 +1,2372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UIXDB</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#f5f5f7;
+  --surface:#fff;
+  --surface-2:#f8f8fa;
+  --surface-3:#efeff2;
+  --ink:#1d1d1f;
+  --muted:#6e6e73;
+  --faint:#98989d;
+  --line:rgba(0,0,0,.09);
+  --line-strong:rgba(0,0,0,.14);
+  --fill:rgba(0,0,0,.055);
+  --blue:#0071e3;
+  --blue-bg:rgba(0,113,227,.10);
+  --green:#1e8e3e;
+  --green-bg:rgba(52,199,89,.13);
+  --red:#d70015;
+  --red-bg:rgba(255,59,48,.10);
+  --orange:#b45309;
+  --orange-bg:rgba(255,159,10,.13);
+  --purple:#6d4aff;
+  --shadow:0 1px 2px rgba(0,0,0,.04), 0 8px 28px rgba(0,0,0,.07);
+  --shadow-lg:0 1px 3px rgba(0,0,0,.06), 0 18px 50px rgba(0,0,0,.13);
+  --ease:cubic-bezier(.23,1,.32,1);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",monospace;
+}
+
+:root[data-theme="dark"]{
+  --bg:#000;
+  --surface:#1c1c1e;
+  --surface-2:#242426;
+  --surface-3:#303033;
+  --ink:#f5f5f7;
+  --muted:#98989d;
+  --faint:#6f6f74;
+  --line:rgba(255,255,255,.09);
+  --line-strong:rgba(255,255,255,.15);
+  --fill:rgba(255,255,255,.075);
+  --blue:#0a84ff;
+  --blue-bg:rgba(10,132,255,.14);
+  --green:#30d158;
+  --green-bg:rgba(48,209,88,.14);
+  --red:#ff453a;
+  --red-bg:rgba(255,69,58,.13);
+  --orange:#ff9f0a;
+  --orange-bg:rgba(255,159,10,.14);
+  --purple:#a78bfa;
+  --shadow:0 10px 35px rgba(0,0,0,.35);
+  --shadow-lg:0 20px 70px rgba(0,0,0,.5);
+}
+
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#000;
+    --surface:#1c1c1e;
+    --surface-2:#242426;
+    --surface-3:#303033;
+    --ink:#f5f5f7;
+    --muted:#98989d;
+    --faint:#6f6f74;
+    --line:rgba(255,255,255,.09);
+    --line-strong:rgba(255,255,255,.15);
+    --fill:rgba(255,255,255,.075);
+    --blue:#0a84ff;
+    --blue-bg:rgba(10,132,255,.14);
+    --green:#30d158;
+    --green-bg:rgba(48,209,88,.14);
+    --red:#ff453a;
+    --red-bg:rgba(255,69,58,.13);
+    --orange:#ff9f0a;
+    --orange-bg:rgba(255,159,10,.14);
+    --purple:#a78bfa;
+    --shadow:0 10px 35px rgba(0,0,0,.35);
+    --shadow-lg:0 20px 70px rgba(0,0,0,.5);
+  }
+}
+
+*{ box-sizing:border-box; }
+html, body{ width:100%; height:100%; }
+
+body{
+  margin:0;
+  display:grid;
+  grid-template-columns:270px minmax(0,1fr);
+  background:var(--bg);
+  color:var(--ink);
+  font:13px/1.45 var(--font);
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+
+button, input, textarea, select{ font:inherit; color:inherit; }
+button, select{ border:0; background:none; cursor:pointer; }
+button:disabled{ opacity:.45; cursor:default; }
+:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+
+::-webkit-scrollbar{ width:9px; height:9px; }
+::-webkit-scrollbar-thumb{ background:var(--line-strong); border-radius:99px; }
+::-webkit-scrollbar-track{ background:transparent; }
+
+svg.i{
+  width:15px; height:15px; fill:none;
+  stroke:currentColor; stroke-width:1.55; stroke-linecap:round; stroke-linejoin:round; flex:none;
+}
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  min-height:32px; padding:6px 12px; border-radius:9px; background:var(--fill);
+  color:var(--ink); font-weight:500; white-space:nowrap;
+  transition:transform 150ms var(--ease), background 150ms, color 150ms;
+}
+.btn:active{ transform:scale(.965); }
+.btn.primary{ background:var(--blue); color:#fff; }
+.btn.danger{ color:var(--red); background:var(--red-bg); }
+.btn.small{ min-height:28px; padding:4px 9px; font-size:12px; }
+
+@media(hover:hover){
+  .btn:hover{ background:var(--surface-3); }
+  .btn.primary:hover{ filter:brightness(1.06); background:var(--blue); }
+  .btn.danger:hover{ background:var(--red-bg); }
+}
+
+.icon-btn{
+  width:30px; height:30px; display:grid; place-items:center; border-radius:8px;
+  color:var(--muted); transition:background 150ms, color 150ms;
+}
+.icon-btn:active{ transform:scale(.92); }
+@media(hover:hover){
+  .icon-btn:hover{ background:var(--fill); color:var(--ink); }
+  .icon-btn.danger:hover{ color:var(--red); background:var(--red-bg); }
+}
+
+aside{
+  min-height:0; display:flex; flex-direction:column; padding:12px;
+  background:color-mix(in srgb,var(--surface) 82%,transparent);
+  border-right:1px solid var(--line);
+  backdrop-filter:saturate(180%) blur(25px);
+  -webkit-backdrop-filter:saturate(180%) blur(25px);
+  z-index:10;
+}
+
+.brand{ display:flex; align-items:center; gap:9px; padding:7px 7px 12px; }
+.brand-mark{
+  width:28px; height:28px; border-radius:8px; display:grid; place-items:center;
+  background:var(--ink); color:var(--bg); font-weight:700;
+}
+.brand strong{ font-size:14px; }
+.brand small{ display:block; color:var(--muted); font-size:10px; }
+
+.connection{
+  display:flex; align-items:center; gap:9px; padding:9px 10px;
+  border:1px solid var(--line); border-radius:11px; background:var(--surface);
+  box-shadow:var(--shadow); cursor:pointer;
+}
+.connection-dot{
+  width:8px; height:8px; border-radius:50%; background:var(--green);
+  box-shadow:0 0 0 3px var(--green-bg);
+}
+.connection-dot.disconnected{ background:var(--faint); box-shadow:none; }
+.connection-copy{ flex:1; min-width:0; }
+.connection-copy b{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+.connection-copy small{ display:block; color:var(--muted); font-size:10px; }
+
+.search-wrap{ position:relative; margin:11px 0 8px; }
+.search-wrap svg{ position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--muted); }
+#tableSearch{
+  width:100%; height:32px; border:0; border-radius:8px; background:var(--fill);
+  padding:0 30px; outline:none;
+}
+.search-shortcut{
+  position:absolute; right:6px; top:5px; padding:2px 5px; border-radius:5px;
+  background:var(--surface); color:var(--muted); font:10px var(--mono);
+}
+
+.schema-tree{ flex:1; min-height:0; overflow:auto; padding:2px 1px; }
+.schema-section{ margin-bottom:3px; }
+.schema-row{
+  min-height:31px; display:flex; align-items:center; gap:7px; padding:5px 7px;
+  border-radius:8px; color:var(--muted); cursor:pointer;
+}
+.schema-row:hover{ background:var(--fill); color:var(--ink); }
+.schema-row.active{ background:var(--blue-bg); color:var(--blue); }
+.schema-row.table-row{ color:var(--ink); }
+.schema-row .grow{ flex:1; min-width:0; }
+.schema-row .grow span{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.schema-row small{ color:var(--faint); font:10px var(--mono); }
+.schema-indent{ padding-left:25px; }
+.pk-icon{ color:var(--blue); }
+.type{ color:var(--muted); font:10px var(--mono); }
+
+.sidebar-footer{
+  margin-top:8px; padding:9px; border-radius:9px; background:var(--fill);
+  color:var(--muted); font-size:11px;
+}
+.sidebar-footer b{ color:var(--ink); }
+
+main{ min-width:0; min-height:0; display:flex; flex-direction:column; }
+.topbar{ height:58px; display:flex; align-items:center; gap:12px; padding:0 18px; flex:none; }
+.mobile-menu{ display:none; }
+.view-switcher{
+  --index:0; position:relative; display:grid; grid-template-columns:repeat(3,100px);
+  padding:2px; border-radius:10px; background:var(--fill);
+}
+.view-switcher::before{
+  content:""; position:absolute; top:2px; bottom:2px; left:2px; width:100px;
+  border-radius:8px; background:var(--surface); box-shadow:0 1px 4px rgba(0,0,0,.12);
+  transform:translateX(calc(var(--index) * 100%)); transition:transform 260ms var(--ease);
+}
+.view-switcher button{ position:relative; z-index:1; min-height:28px; color:var(--muted); font-weight:500; }
+.view-switcher button.active{ color:var(--ink); }
+.top-spacer{ flex:1; }
+
+.status{ display:flex; align-items:center; gap:7px; color:var(--muted); font-size:11px; }
+.status-dot{ width:6px; height:6px; border-radius:50%; background:var(--green); }
+.status-dot.disconnected{ background:var(--faint); }
+.top-actions{ display:flex; align-items:center; gap:6px; }
+
+.lang-picker{
+  min-height:30px;
+  padding:3px 8px;
+  border-radius:8px;
+  background:var(--fill);
+  font-weight:600;
+  font-size:12px;
+  color:var(--ink);
+  outline:none;
+}
+.lang-picker:hover{ background:var(--surface-3); }
+
+.view{ display:none; flex:1; min-height:0; margin:0 18px 18px; flex-direction:column; gap:11px; }
+.view.active{ display:flex; }
+.card{
+  min-width:0; background:var(--surface); border:1px solid var(--line);
+  border-radius:13px; overflow:hidden; box-shadow:var(--shadow);
+}
+
+.editor-card{ flex:none; }
+.editor-head{ height:40px; display:flex; align-items:center; gap:8px; padding:0 12px; border-bottom:1px solid var(--line); color:var(--muted); }
+.editor-title{ display:flex; align-items:center; gap:7px; font-weight:500; color:var(--ink); }
+.editor-title .dot{ width:7px; height:7px; border-radius:50%; background:var(--blue); }
+.editor-hint{ font:10px var(--mono); color:var(--faint); }
+#sql{
+  display:block; width:100%; min-height:140px; resize:vertical; border:0; outline:0;
+  padding:15px 17px; background:transparent; color:var(--ink); font:13px/1.75 var(--mono);
+}
+.editor-bottom{ display:flex; align-items:center; gap:8px; padding:9px 11px; border-top:1px solid var(--line); }
+.history{ flex:1; min-width:0; display:flex; gap:5px; overflow:auto; }
+.history-chip{
+  max-width:230px; padding:4px 8px; border-radius:7px; background:var(--fill);
+  color:var(--muted); border:1px solid transparent; font:10px var(--mono);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.history-chip:hover{ color:var(--ink); border-color:var(--line-strong); }
+
+.query-result{ flex:1; min-height:0; display:flex; flex-direction:column; }
+.result-toolbar{ min-height:43px; display:flex; align-items:center; gap:12px; padding:0 13px; border-bottom:1px solid var(--line); color:var(--muted); }
+.result-status.success{ color:var(--green); font-weight:600; }
+.result-status.error{ color:var(--red); font-weight:600; }
+.result-grid{ flex:1; min-height:0; overflow:auto; }
+
+table{ width:100%; border-collapse:collapse; }
+th{
+  position:sticky; top:0; z-index:1; padding:8px 13px; background:var(--surface);
+  color:var(--ink); text-align:left; font-size:11px; font-weight:600; border-bottom:1px solid var(--line); white-space:nowrap;
+}
+th span{ margin-left:5px; color:var(--faint); font:9px var(--mono); font-weight:400; }
+td{
+  padding:8px 13px; border-bottom:1px solid var(--line); color:var(--ink);
+  font:11.5px var(--mono); white-space:nowrap; max-width:330px; overflow:hidden; text-overflow:ellipsis;
+}
+td.number{ text-align:right; }
+td.editable{ cursor:text; }
+td.changed{ background:var(--green-bg); color:var(--green); }
+td input{
+  width:100%; border:0; outline:0; border-radius:5px; padding:3px 6px;
+  background:var(--surface-2); box-shadow:0 0 0 2px var(--blue); color:var(--ink); font:inherit;
+}
+tr.deleted td{ color:var(--red); opacity:.5; text-decoration:line-through; }
+.empty{ padding:40px 20px; text-align:center; color:var(--muted); }
+
+.data-view{ min-height:0; }
+.data-toolbar{ display:flex; align-items:center; gap:8px; min-height:48px; padding:7px 10px; border-bottom:1px solid var(--line); }
+.table-select{ min-width:150px; height:31px; padding:0 9px; border-radius:8px; background:var(--fill); outline:none; }
+.data-hint{ color:var(--muted); font-size:11px; }
+
+.diagram-toolbar{ min-height:46px; display:flex; align-items:center; gap:7px; }
+.diagram-tabs{ display:flex; gap:2px; padding:2px; border-radius:9px; background:var(--fill); }
+.diagram-tabs button{ min-height:28px; padding:0 11px; border-radius:7px; color:var(--muted); font-weight:500; }
+.diagram-tabs button.active{ background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.1); }
+.zoom{ display:flex; padding:2px; gap:2px; border-radius:8px; background:var(--fill); }
+.zoom button{ width:28px; height:27px; border-radius:6px; font-weight:600; }
+.zoom-value{ width:45px; color:var(--muted); font:10px var(--mono); }
+.diagram-card{ position:relative; flex:1; min-height:0; overflow:hidden; }
+#canvas{
+  position:absolute; inset:0; overflow:hidden; touch-action:none; cursor:grab;
+  background:radial-gradient(var(--line-strong) 1px,transparent 1.2px) 0 0/20px 20px, var(--surface);
+}
+#canvas.dragging{ cursor:grabbing; }
+#world{ position:absolute; left:0; top:0; width:1px; height:1px; transform-origin:0 0; }
+#links{ position:absolute; left:0; top:0; width:1px; height:1px; overflow:visible; pointer-events:none; }
+#links path{
+  fill:none; stroke:var(--muted); stroke-width:1.5; pointer-events:stroke; cursor:pointer;
+  transition:stroke 120ms,stroke-width 120ms;
+}
+#links path.hit{ stroke:transparent; stroke-width:12; pointer-events:stroke; cursor:pointer; }
+#links path.selected{ stroke:var(--blue); stroke-width:2.5; }
+#temp-link{ fill:none; stroke:var(--blue); stroke-width:1.7; stroke-dasharray:5 4; pointer-events:none; }
+
+.table-card{
+  position:absolute; width:245px; border-radius:12px; background:var(--surface);
+  border:1px solid var(--line-strong); box-shadow:var(--shadow-lg); overflow:visible; user-select:none;
+}
+.table-card.new{ border-color:var(--green); box-shadow:0 0 0 1px var(--green), var(--shadow-lg); }
+.table-card.removed{ opacity:.42; }
+.table-header{
+  height:43px; display:flex; align-items:center; gap:7px; padding:0 8px 0 11px;
+  background:var(--fill); border-radius:11px 11px 0 0; border-bottom:1px solid var(--line); cursor:grab;
+}
+.table-header:active{ cursor:grabbing; }
+.table-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+.table-name[contenteditable="true"]{ outline:none; }
+.new-label{ padding:2px 6px; border-radius:99px; color:var(--green); background:var(--green-bg); font-size:9px; font-weight:600; }
+
+.column-row{ position:relative; height:31px; display:flex; align-items:center; gap:6px; padding:0 7px; border-bottom:1px solid var(--line); }
+.column-row.new{ background:var(--green-bg); }
+.column-row.removed{ color:var(--red); text-decoration:line-through; }
+.column-key{ width:22px; height:22px; display:grid; place-items:center; border-radius:6px; color:var(--faint); flex:none; }
+.column-key.active{ color:var(--blue); background:var(--blue-bg); }
+.column-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.column-name[contenteditable="true"]{ outline:none; }
+.column-type{ max-width:88px; height:22px; padding:0 5px; border-radius:5px; background:var(--fill); color:var(--muted); font:9px var(--mono); }
+.connection-handle{
+  position:absolute; right:-7px; top:9px; width:14px; height:14px; border-radius:50%;
+  background:var(--surface); border:1.5px solid var(--blue);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 10%,transparent);
+  opacity:0; cursor:crosshair; transition:opacity 130ms,transform 130ms; z-index:4;
+}
+.column-row:hover .connection-handle, .connection-handle.visible{ opacity:1; }
+.table-add-column{ width:100%; height:33px; display:flex; align-items:center; gap:6px; padding:0 11px; border-radius:0 0 11px 11px; color:var(--blue); font-weight:500; }
+.table-add-column:hover{ background:var(--fill); }
+
+.relation-inspector{
+  position:absolute; z-index:20; min-width:265px; max-width:330px; padding:9px;
+  border:1px solid var(--line-strong); border-radius:11px;
+  background:color-mix(in srgb,var(--surface) 94%,transparent);
+  box-shadow:var(--shadow-lg); backdrop-filter:blur(18px); display:none;
+}
+.relation-inspector.visible{ display:block; }
+.relation-title{ display:flex; align-items:center; gap:8px; padding:4px 4px 8px; }
+.relation-title .relation-icon{ width:26px; height:26px; display:grid; place-items:center; border-radius:7px; background:var(--blue-bg); color:var(--blue); }
+.relation-title-copy{ flex:1; min-width:0; }
+.relation-title-copy strong{ display:block; font-size:11px; }
+.relation-title-copy small{ color:var(--muted); font:9px var(--mono); }
+.relation-actions{ display:flex; gap:5px; padding-top:7px; border-top:1px solid var(--line); }
+.relation-actions .btn{ flex:1; }
+
+.diff-view{ display:none; flex:1; min-height:0; flex-direction:column; }
+.diff-view.visible{ display:flex; }
+.diff-code{ flex:1; min-height:0; overflow:auto; margin:0; padding:17px; font:12px/1.8 var(--mono); white-space:pre-wrap; }
+.diff-code .keyword{ color:var(--blue); }
+.diff-code .comment{ color:var(--muted); }
+.diff-footer{ border-top:1px solid var(--line); display:flex; align-items:center; gap:8px; padding:9px 11px; }
+.endpoint{ width:180px; height:31px; padding:0 9px; border:0; border-radius:8px; background:var(--fill); outline:none; font:10px var(--mono); }
+.logs{ max-height:95px; overflow:auto; padding:7px 12px; border-top:1px solid var(--line); color:var(--muted); font:10px/1.6 var(--mono); }
+
+.pending-bar{
+  position:fixed; z-index:50; bottom:20px; left:calc(270px + (100vw - 270px)/2);
+  transform:translate(-50%,12px); opacity:0; pointer-events:none; display:flex;
+  align-items:center; gap:6px; padding:7px; border:1px solid var(--line-strong);
+  border-radius:12px; background:color-mix(in srgb,var(--surface) 94%,transparent);
+  box-shadow:var(--shadow-lg); backdrop-filter:blur(20px); transition:opacity 180ms,transform 180ms;
+}
+.pending-bar.visible{ opacity:1; transform:translate(-50%,0); pointer-events:auto; }
+.pending-count{ padding:0 7px; color:var(--ink); font-weight:600; font-size:11px; }
+
+#toast{
+  position:fixed; z-index:100; top:13px; left:calc(270px + (100vw - 270px)/2);
+  transform:translate(-50%,-8px); opacity:0; pointer-events:none; padding:8px 13px;
+  border-radius:9px; background:var(--ink); color:var(--bg); font-size:11px; font-weight:500;
+  box-shadow:var(--shadow-lg); transition:opacity 180ms,transform 180ms;
+}
+#toast.visible{ opacity:1; transform:translate(-50%,0); }
+
+/* Modal */
+.modal-backdrop{
+  position:fixed; inset:0; z-index:90; display:none; place-items:center; padding:20px;
+  background:rgba(0,0,0,.35); backdrop-filter:blur(8px);
+}
+.modal-backdrop.visible{ display:grid; }
+.modal{
+  width:min(480px,100%); max-height:92vh; display:flex; flex-direction:column;
+  border:1px solid var(--line-strong); border-radius:16px; background:var(--surface);
+  box-shadow:var(--shadow-lg); overflow:hidden;
+}
+.modal-head{ display:flex; align-items:center; gap:8px; padding:13px 16px; border-bottom:1px solid var(--line); flex:none; }
+.modal-head h3{ margin:0; font-size:14px; }
+.modal-body{ flex:1; min-height:0; overflow-y:auto; }
+.connections-search-wrap{ padding:10px 16px 4px; }
+.connections-search-input{
+  width:100%; height:30px; border:1px solid var(--line); border-radius:7px;
+  background:var(--fill); padding:0 10px; font-size:11px; outline:none;
+}
+.connections-search-input:focus{ border-color:var(--blue); box-shadow:0 0 0 2px var(--blue-bg); }
+.saved-connections{ display:grid; gap:5px; max-height:160px; overflow-y:auto; padding:6px 16px 10px; border-bottom:1px solid var(--line); }
+.saved-connections:empty{ display:none; }
+
+.saved-connection{
+  display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:8px;
+  background:var(--fill); border:1px solid transparent;
+}
+.saved-connection:hover{ background:var(--surface-3); }
+.saved-connection.active{ background:var(--blue-bg); border-color:color-mix(in srgb, var(--blue) 35%, transparent); }
+.saved-connection-select{ flex:1; min-width:0; overflow:hidden; text-align:left; cursor:pointer; }
+.saved-connection-select b{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11.5px; }
+.saved-connection-select small{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:10px; }
+.saved-badge{ font-size:9px; font-weight:600; padding:2px 6px; border-radius:99px; background:var(--green-bg); color:var(--green); flex:none; }
+
+.connection-form{ display:grid; gap:10px; padding:14px 16px; }
+.connection-form label{ display:grid; gap:5px; color:var(--muted); font-size:11px; }
+.connection-form input{ width:100%; height:34px; padding:0 9px; border:1px solid var(--line); border-radius:8px; background:var(--fill); outline:none; }
+.connection-form input:focus{ border-color:var(--blue); box-shadow:0 0 0 2px var(--blue-bg); }
+.connection-form-grid{ display:grid; grid-template-columns:1fr 110px; gap:10px; }
+.connection-error{ display:none; color:var(--red); font-size:11px; }
+.connection-error.visible{ display:block; }
+.modal-footer{ display:flex; justify-content:flex-end; gap:7px; padding:11px 16px; border-top:1px solid var(--line); flex:none; }
+
+.mobile-overlay{ display:none; }
+@media(max-width:850px){
+  body{ grid-template-columns:1fr; }
+  aside{
+    position:fixed; inset:0 auto 0 0; width:min(300px,88vw);
+    transform:translateX(-105%); transition:transform 240ms var(--ease); z-index:80;
+  }
+  aside.open{ transform:translateX(0); }
+  .mobile-overlay.visible{ display:block; position:fixed; inset:0; z-index:70; background:rgba(0,0,0,.22); }
+  .mobile-menu{ display:grid; }
+  .topbar{ padding:0 10px; }
+  .status{ display:none; }
+  .view-switcher{ flex:1; grid-template-columns:repeat(3,1fr); }
+  .view-switcher::before{ width:calc((100% - 4px)/3); }
+  .view{ margin:0 10px 10px; }
+  .pending-bar, #toast{ left:50%; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="mobile-overlay" id="mobileOverlay"></div>
+
+<aside id="sidebar">
+  <div class="brand">
+    <img class="brand-mark" src="/assets/img/logo.png"/>
+    <div>
+      <strong>UIXDB</strong>
+      <small id="i18n-brandSub">PostgreSQL workspace</small>
+    </div>
+  </div>
+
+  <button class="connection" id="connectionButton">
+    <span class="connection-dot disconnected" id="sidebarDot"></span>
+    <span class="connection-copy">
+      <b id="connectionName">No connection</b>
+      <small id="connectionInfo">Click to configure database</small>
+    </span>
+    <svg class="i" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></svg>
+  </button>
+
+  <div class="search-wrap">
+    <svg class="i" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
+    <input id="tableSearch" autocomplete="off" placeholder="Search tables..." aria-label="Search tables">
+    <span class="search-shortcut">/</span>
+  </div>
+
+  <div class="schema-tree" id="schemaTree"></div>
+
+  <div class="sidebar-footer">
+    <b>PostgreSQL</b><br>
+    <span id="i18n-schemaLabel">Schema</span> <b>public</b> · <span id="sidebarTableCount">0</span> <span id="i18n-tablesCountLabel">tables</span>
+  </div>
+</aside>
+
+<main>
+  <header class="topbar">
+    <button class="icon-btn mobile-menu" id="mobileMenu" aria-label="Open menu">
+      <svg class="i" viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg>
+    </button>
+
+    <div class="view-switcher" id="viewSwitcher">
+      <button class="active" data-view="query" id="i18n-tabQuery">Queries</button>
+      <button data-view="data" id="i18n-tabData">Data</button>
+      <button data-view="diagram" id="i18n-tabDiagram">Diagram</button>
+    </div>
+
+    <div class="top-spacer"></div>
+
+    <div class="status">
+      <span class="status-dot disconnected" id="topbarDot"></span>
+      <span id="connectionStatus">Not connected</span>
+    </div>
+
+    <div class="top-actions">
+      <select class="lang-picker" id="langPicker" aria-label="Language">
+        <option value="en" selected>EN</option>
+        <option value="ru">RU</option>
+      </select>
+
+      <button class="icon-btn" id="refreshSchema" title="Refresh schema">
+        <svg class="i" viewBox="0 0 16 16"><path d="M13 5V2l-2 2a5 5 0 10.8 7.3"/><path d="M3 11v3l2-2"/></svg>
+      </button>
+
+      <button class="btn" id="themeButton">
+        <svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1M8 13.5v1M1.5 8h1M13.5 8h1M3.4 3.4l.7.7M11.9 11.9l.7.7M12.6 3.4l-.7.7M4.1 11.9l-.7.7"/></svg>
+        <span class="theme-label" id="i18n-themeLabel">Theme</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= QUERY ================= -->
+  <section class="view active" id="queryView">
+    <div class="card editor-card">
+      <div class="editor-head">
+        <div class="editor-title"><span class="dot"></span>SQL Console</div>
+        <span class="editor-hint">PostgreSQL · read/write</span>
+        <div class="top-spacer"></div>
+        <button class="icon-btn" id="clearSql" title="Clear">
+          <svg class="i" viewBox="0 0 16 16"><path d="M3 4h10M6 4V2.5h4V4M5 6v6M8 6v6M11 6v6M4 13.5h8"/></svg>
+        </button>
+      </div>
+
+      <textarea id="sql" spellcheck="false" aria-label="SQL Query" placeholder="SELECT * FROM users;"></textarea>
+
+      <div class="editor-bottom">
+        <div class="history" id="history"></div>
+        <button class="btn" id="explainButton">Explain</button>
+        <button class="btn primary" id="runButton"><span id="i18n-runText">Run</span> <span style="opacity:.65">⌘↵</span></button>
+      </div>
+    </div>
+
+    <div class="card query-result">
+      <div class="result-toolbar" id="queryMeta">
+        <span class="result-status" id="i18n-awaitingQuery">Awaiting query</span>
+        <div class="top-spacer"></div>
+        <span>PostgreSQL</span>
+      </div>
+      <div class="result-grid" id="queryGrid"></div>
+    </div>
+  </section>
+
+  <!-- ================= DATA ================= -->
+  <section class="view data-view" id="dataView">
+    <div class="card query-result">
+      <div class="data-toolbar">
+        <select class="table-select" id="dataTable"></select>
+        <span class="data-hint" id="i18n-dataHint">Click cell to edit · Enter to save</span>
+        <div class="top-spacer"></div>
+        <button class="btn" id="addRow"><span id="i18n-addRowText">+ New row</span></button>
+      </div>
+      <div class="result-toolbar" id="dataMeta"></div>
+      <div class="result-grid" id="dataGrid"></div>
+    </div>
+  </section>
+
+  <!-- ================= DIAGRAM ================= -->
+  <section class="view" id="diagramView">
+    <div class="diagram-toolbar">
+      <div class="diagram-tabs">
+        <button class="active" data-diagram-view="erd" id="i18n-erdTab">ERD</button>
+        <button data-diagram-view="diff" id="i18n-diffTab">SQL Diff</button>
+      </div>
+      <div class="top-spacer"></div>
+      <div class="zoom">
+        <button id="zoomOut">−</button>
+        <span class="zoom-value" id="zoomValue">100%</span>
+        <button id="zoomIn">+</button>
+      </div>
+      <button class="btn" id="fitDiagram"><span id="i18n-fitDiagram">Fit</span></button>
+      <button class="btn primary" id="addTable"><span id="i18n-addTable">+ Table</span></button>
+    </div>
+
+    <div class="card diagram-card">
+      <div id="canvas">
+        <div id="world">
+          <svg id="links">
+            <defs>
+              <marker id="arrowEnd" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M1 1L7 4L1 7" fill="none" stroke="context-stroke" stroke-width="1.3"/>
+              </marker>
+              <marker id="circleStart" markerWidth="8" markerHeight="8" refX="4" refY="4">
+                <circle cx="4" cy="4" r="3" fill="var(--surface)" stroke="context-stroke" stroke-width="1.3"/>
+              </marker>
+            </defs>
+            <g id="linkHitLayer"></g>
+            <g id="linkVisibleLayer"></g>
+            <path id="tempLink"></path>
+          </svg>
+          <div id="cards"></div>
+        </div>
+
+        <div class="relation-inspector" id="relationInspector">
+          <div class="relation-title">
+            <div class="relation-icon">
+              <svg class="i" viewBox="0 0 16 16"><path d="M5 5h6M5 11h6"/><path d="M4 3.5h8v9H4z"/></svg>
+            </div>
+            <div class="relation-title-copy">
+              <strong id="relationName">Foreign key</strong>
+              <small id="relationDescription">table_a.id → table_b.id</small>
+            </div>
+            <button class="icon-btn" id="closeRelation">×</button>
+          </div>
+          <div class="relation-actions">
+            <button class="btn" id="relationSql">SQL</button>
+            <button class="btn danger" id="removeRelation"><span id="i18n-disconnectLink">Disconnect relation</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="diff-view" id="diffView">
+        <pre class="diff-code" id="diffCode"></pre>
+        <div class="logs" id="logs"></div>
+        <div class="diff-footer">
+          <input class="endpoint" id="endpoint" value="/api" aria-label="API endpoint">
+          <div class="top-spacer"></div>
+          <button class="btn primary" id="sendSchema"><span id="i18n-sendSchema">Send to server</span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="pending-bar" id="pendingBar">
+  <span class="pending-count" id="pendingCount">0 changes</span>
+  <button class="btn small" id="discardChanges"><span id="i18n-discardChanges">Discard</span></button>
+  <button class="btn small" id="showPendingSql">SQL</button>
+  <button class="btn small primary" id="applyChanges"><span id="i18n-applyChanges">Apply</span></button>
+</div>
+
+<div id="toast" role="status"></div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="connectionModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="i18n-modalTitle">Database Connections</h3>
+      <div class="top-spacer"></div>
+      <button class="btn small" id="btnNewConnection" type="button"><span id="i18n-btnNewConn">+ New</span></button>
+      <button class="icon-btn" id="closeConnection" type="button">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="connections-search-wrap" id="connSearchBox" style="display:none;">
+        <input class="connections-search-input" id="searchConnections" placeholder="Search profiles..." autocomplete="off">
+      </div>
+
+      <div class="saved-connections" id="savedConnections"></div>
+
+      <form class="connection-form" id="connectionForm">
+        <input type="hidden" id="connectionId">
+        <label>
+          <span id="i18n-labelProfile">Profile Name</span>
+          <input id="connectionNameInput" required autocomplete="off" placeholder="prod-main or local-docker">
+        </label>
+
+        <div class="connection-form-grid">
+          <label>
+            Host
+            <input id="connectionHost" required autocomplete="off" placeholder="localhost">
+          </label>
+          <label>
+            Port
+            <input id="connectionPort" required inputmode="numeric" value="5432" autocomplete="off">
+          </label>
+        </div>
+
+        <label>
+          Database
+          <input id="connectionDatabase" required autocomplete="off" placeholder="postgres">
+        </label>
+
+        <label>
+          Schema
+          <input id="connectionSchema" value="public" autocomplete="off">
+        </label>
+
+        <label>
+          <span id="i18n-labelUser">User</span>
+          <input id="connectionUser" required autocomplete="username" placeholder="postgres">
+        </label>
+
+        <label>
+          <span id="i18n-labelPassword">Password</span>
+          <input id="connectionPassword" type="password" autocomplete="current-password" placeholder="••••••••">
+        </label>
+
+        <span class="connection-error" id="connectionError"></span>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" id="cancelConnection" type="button"><span id="i18n-cancelBtn">Cancel</span></button>
+      <button class="btn primary" id="connectDatabase" type="submit" form="connectionForm"><span id="i18n-saveConnBtn">Connect & Save</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = v => String(v ?? "NULL").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+/*I18N DICTIONARY & LOGIC*/
+let currentLang = "en";
+
+const I18N = {
+  en: {
+    brandSub: "PostgreSQL workspace",
+    noConnection: "No connection",
+    clickToConfig: "Click to configure database",
+    searchPlaceholder: "Search tables...",
+    schemaLabel: "Schema",
+    tablesCountLabel: "tables",
+    tabQuery: "Queries",
+    tabData: "Data",
+    tabDiagram: "Diagram",
+    notConnected: "Not connected",
+    connectedTo: "Connected: ",
+    themeLabel: "Theme",
+    refreshSchemaTitle: "Refresh schema",
+    clearTitle: "Clear",
+    runText: "Run",
+    awaitingQuery: "Awaiting query",
+    runningText: "Executing...",
+    readyToRun: "Ready to execute",
+    querySuccess: "Done · {rows} rows · {ms}ms",
+    queryNoRows: "Query executed. No rows.",
+    dataHint: "Click cell to edit · Enter to save",
+    addRowText: "+ New row",
+    rowsCount: "rows",
+    colsCount: "columns",
+    changesSavedApi: "Changes saved via API",
+    noDataRows: "No rows.",
+    erdTab: "ERD",
+    diffTab: "SQL Diff",
+    fitDiagram: "Fit",
+    addTable: "+ Table",
+    addColumn: "Column",
+    newLabel: "new",
+    pkTitle: "Primary key",
+    deleteTableTitle: "Delete table",
+    deleteColumnTitle: "Delete column",
+    pullToLinkTitle: "Drag to link with another column",
+    deleteRowTitle: "Delete row",
+    disconnectLink: "Disconnect relation",
+    noChanges: "-- No changes",
+    sendSchema: "Send to server",
+    discardChanges: "Discard",
+    applyChanges: "Apply",
+    changesCount: "{count} change",
+    changesCountPlural: "{count} changes",
+    modalTitle: "Database Connections",
+    btnNewConn: "+ New",
+    searchProfilesPlaceholder: "Search profiles...",
+    labelProfile: "Profile Name",
+    labelUser: "User",
+    labelPassword: "Password",
+    cancelBtn: "Cancel",
+    saveConnBtn: "Connect & Save",
+    activeBadge: "Active",
+    deleteProfileTitle: "Delete profile",
+    tableAlreadyExists: 'Table "{name}" already exists',
+    tableCreated: "Table {name} created",
+    rowAdded: "New row added",
+    linkCreated: "Relation created: {from} → {to}",
+    linkDisconnected: "Relation disconnected: {from} → {to}",
+    schemaUpdated: "Schema refreshed",
+    serverNoTables: "Server returned no tables",
+    fillRequired: "Please fill required fields",
+    connSuccess: "Connected to {name}",
+    connError: "Connection error",
+    dataChangesDiscarded: "Data changes discarded",
+    schemaChangesDiscarded: "Schema changes discarded",
+    profileDeleted: 'Profile "{name}" deleted',
+    appliedCount: "Applied: {count} SQL",
+    enterSqlQuery: "Please enter an SQL query"
+  },
+  ru: {
+    brandSub: "PostgreSQL workspace",
+    noConnection: "Нет подключения",
+    clickToConfig: "Кликните для выбора базы",
+    searchPlaceholder: "Поиск таблиц...",
+    schemaLabel: "Схема",
+    tablesCountLabel: "таблиц",
+    tabQuery: "Запросы",
+    tabData: "Данные",
+    tabDiagram: "Диаграмма",
+    notConnected: "Не подключено",
+    connectedTo: "Подключено: ",
+    themeLabel: "Тема",
+    refreshSchemaTitle: "Обновить схему",
+    clearTitle: "Очистить",
+    runText: "Выполнить",
+    awaitingQuery: "Ожидание запроса",
+    runningText: "Выполняется...",
+    readyToRun: "Готово к выполнению",
+    querySuccess: "Готово · {rows} строк · {ms}ms",
+    queryNoRows: "Запрос выполнен. Строк нет.",
+    dataHint: "Клик по ячейке — изменить · Enter — сохранить",
+    addRowText: "+ Новая строка",
+    rowsCount: "строк",
+    colsCount: "колонок",
+    changesSavedApi: "Изменения сохраняются через API",
+    noDataRows: "Нет строк.",
+    erdTab: "ERD",
+    diffTab: "SQL Diff",
+    fitDiagram: "Вписать",
+    addTable: "+ Таблица",
+    addColumn: "Колонка",
+    newLabel: "новая",
+    pkTitle: "Первичный ключ",
+    deleteTableTitle: "Удалить таблицу",
+    deleteColumnTitle: "Удалить колонку",
+    pullToLinkTitle: "Потяни для связи",
+    deleteRowTitle: "Удалить строку",
+    disconnectLink: "Отключить связь",
+    noChanges: "-- Изменений нет",
+    sendSchema: "Отправить на сервер",
+    discardChanges: "Отменить",
+    applyChanges: "Применить",
+    changesCount: "{count} изменение",
+    changesCountPlural: "{count} изменений",
+    modalTitle: "Подключения к базам данных",
+    btnNewConn: "+ Новое",
+    searchProfilesPlaceholder: "Поиск по профилям...",
+    labelProfile: "Название профиля",
+    labelUser: "User",
+    labelPassword: "Password",
+    cancelBtn: "Отмена",
+    saveConnBtn: "Подключиться и сохранить",
+    activeBadge: "Активно",
+    deleteProfileTitle: "Удалить профиль",
+    tableAlreadyExists: 'Таблица "{name}" уже существует',
+    tableCreated: "Создана таблица {name}",
+    rowAdded: "Новая строка добавлена",
+    linkCreated: "Связь создана: {from} → {to}",
+    linkDisconnected: "Связь {from} → {to} отключена",
+    schemaUpdated: "Схема обновлена",
+    serverNoTables: "Сервер не вернул tables",
+    fillRequired: "Заполните обязательные поля",
+    connSuccess: "Подключено к {name}",
+    connError: "Ошибка соединения",
+    dataChangesDiscarded: "Изменения данных отменены",
+    schemaChangesDiscarded: "Изменения схемы отменены",
+    profileDeleted: 'Профиль "{name}" удален',
+    appliedCount: "Применено: {count} SQL",
+    enterSqlQuery: "Введите SQL-запрос"
+  }
+};
+
+function t(key, params = {}){
+  let text = I18N[currentLang]?.[key] || I18N["en"]?.[key] || key;
+  for(const [k, v] of Object.entries(params)){
+    text = text.replace(new RegExp(`\\{${k}\\}`, "g"), v);
+  }
+  return text;
+}
+
+function updateStaticTranslations(){
+  document.documentElement.lang = currentLang;
+  $("#langPicker").value = currentLang;
+
+  $("#i18n-brandSub").textContent = t("brandSub");
+  $("#tableSearch").placeholder = t("searchPlaceholder");
+  $("#i18n-schemaLabel").textContent = t("schemaLabel");
+  $("#i18n-tablesCountLabel").textContent = t("tablesCountLabel");
+
+  $("#i18n-tabQuery").textContent = t("tabQuery");
+  $("#i18n-tabData").textContent = t("tabData");
+  $("#i18n-tabDiagram").textContent = t("tabDiagram");
+
+  $("#refreshSchema").title = t("refreshSchemaTitle");
+  $("#i18n-themeLabel").textContent = t("themeLabel");
+  $("#clearSql").title = t("clearTitle");
+  $("#i18n-runText").textContent = t("runText");
+  $("#i18n-awaitingQuery").textContent = t("awaitingQuery");
+
+  $("#i18n-dataHint").textContent = t("dataHint");
+  $("#i18n-addRowText").textContent = t("addRowText");
+
+  $("#i18n-erdTab").textContent = t("erdTab");
+  $("#i18n-diffTab").textContent = t("diffTab");
+  $("#i18n-fitDiagram").textContent = t("fitDiagram");
+  $("#i18n-addTable").textContent = t("addTable");
+  $("#i18n-disconnectLink").textContent = t("disconnectLink");
+  $("#i18n-sendSchema").textContent = t("sendSchema");
+
+  $("#i18n-discardChanges").textContent = t("discardChanges");
+  $("#i18n-applyChanges").textContent = t("applyChanges");
+
+  $("#i18n-modalTitle").textContent = t("modalTitle");
+  $("#i18n-btnNewConn").textContent = t("btnNewConn");
+  $("#searchConnections").placeholder = t("searchProfilesPlaceholder");
+  $("#i18n-labelProfile").textContent = t("labelProfile");
+  $("#i18n-labelUser").textContent = t("labelUser");
+  $("#i18n-labelPassword").textContent = t("labelPassword");
+  $("#i18n-cancelBtn").textContent = t("cancelBtn");
+  $("#i18n-saveConnBtn").textContent = t("saveConnBtn");
+
+  updateConnectionUI();
+  updatePendingUI();
+}
+
+function setLanguage(lang){
+  currentLang = (lang === "ru") ? "ru" : "en";
+  writeSettings({ lang: currentLang });
+  updateStaticTranslations();
+  renderAll();
+}
+
+/*ICONS*/
+const ICONS = {
+  table: `<rect x="2" y="3" width="12" height="10" rx="2"/><path d="M2 7h12"/><path d="M6 7v6"/>`,
+  key: `<circle cx="5.5" cy="10.5" r="2.5"/><path d="M7.3 8.7L13 3"/><path d="M10.8 5.2l1.8 1.8"/>`,
+  plus: `<path d="M8 3v10"/><path d="M3 8h10"/>`,
+  x: `<path d="M4 4l8 8"/><path d="M12 4l-8 8"/>`,
+  trash: `<path d="M3 6h10M5.5 6v7a1 1 0 001 1h3a1 1 0 001-1V6M6 3.5h4"/>`
+};
+const icon = name => `<svg class="i" viewBox="0 0 16 16">${ICONS[name] || ""}</svg>`;
+
+/* CONNECTIONS & LOCAL STORAGE*/
+let activeConnection = null;
+let connectionConfig = null;
+let savedConnections = [];
+
+const STORAGE_KEY = "uixdb.frontend.settings";
+
+function readSettings(){
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
+}
+function writeSettings(changes){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...readSettings(), ...changes })); } catch {}
+}
+function connectionKey(c = connectionConfig){
+  if(!c) return "default";
+  return [c.host, c.port, c.database, c.schema || "public", c.user].join("|");
+}
+
+function saveConnectionSettings(){
+  writeSettings({
+    connection: connectionConfig,
+    activeConnection,
+    connections: savedConnections,
+    history,
+    lang: currentLang
+  });
+}
+function saveViewSettings(){
+  writeSettings({ currentView, currentDiagramView, currentTable, camera });
+}
+function saveTablePositions(){
+  if(!connectionConfig) return;
+  const s = readSettings(), p = s.positions || {};
+  p[connectionKey()] = Object.fromEntries(Object.entries(DB).map(([n, t]) => [n, { x: t.x, y: t.y }]));
+  writeSettings({ positions: p });
+}
+function restoreTablePositions(){
+  const p = readSettings().positions?.[connectionKey()] || {};
+  Object.entries(p).forEach(([n, pos]) => {
+    if(DB[n]){ DB[n].x = Number(pos.x) || DB[n].x; DB[n].y = Number(pos.y) || DB[n].y; }
+  });
+}
+
+function restoreFrontendSettings(){
+  const s = readSettings();
+  currentLang = s.lang === "ru" ? "ru" : "en";
+  savedConnections = Array.isArray(s.connections) ? s.connections : [];
+  connectionConfig = s.connection || (savedConnections[0] || null);
+  activeConnection = s.activeConnection || (connectionConfig?.name || null);
+  history = Array.isArray(s.history) ? s.history : [];
+
+  currentView = s.currentView || "query";
+  currentDiagramView = s.currentDiagramView || "erd";
+  currentTable = s.currentTable || null;
+
+  if(s.camera){
+    camera = {
+      x: Number(s.camera.x) || 20,
+      y: Number(s.camera.y) || 20,
+      zoom: Number(s.camera.zoom) || 1
+    };
+  }
+
+  const th = s.theme;
+  if(th === "light" || th === "dark") document.documentElement.dataset.theme = th;
+}
+
+function renderSavedConnections(filter = ""){
+  const listEl = $("#savedConnections");
+  const norm = filter.trim().toLowerCase();
+  const filtered = savedConnections.filter(c => !norm || (c.name||"").toLowerCase().includes(norm) || (c.database||"").toLowerCase().includes(norm) || (c.host||"").toLowerCase().includes(norm));
+
+  $("#connSearchBox").style.display = savedConnections.length > 3 ? "block" : "none";
+
+  if(!filtered.length){
+    listEl.innerHTML = savedConnections.length ? `<div style="padding:10px;text-align:center;color:var(--muted);font-size:11px">Nothing found</div>` : "";
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(c => `
+    <div class="saved-connection ${activeConnection === c.name ? "active" : ""}" data-id="${esc(c.id)}">
+      <button class="saved-connection-select" type="button" data-action="pick-conn" data-id="${esc(c.id)}">
+        <b>${esc(c.name)}</b>
+        <small>${esc(c.user)}@${esc(c.host)}:${esc(c.port)}/${esc(c.database)} (${esc(c.schema || 'public')})</small>
+      </button>
+      ${activeConnection === c.name ? `<span class="saved-badge">${t("activeBadge")}</span>` : ""}
+      <button class="icon-btn danger" type="button" data-action="delete-conn" data-id="${esc(c.id)}" title="${t("deleteProfileTitle")}">
+        ${icon("trash")}
+      </button>
+    </div>
+  `).join("");
+}
+
+function setFormFromConfig(cfg){
+  $("#connectionId").value = cfg?.id || "";
+  $("#connectionNameInput").value = cfg?.name || "";
+  $("#connectionHost").value = cfg?.host || "localhost";
+  $("#connectionPort").value = cfg?.port || "5432";
+  $("#connectionDatabase").value = cfg?.database || "postgres";
+  $("#connectionSchema").value = cfg?.schema || "public";
+  $("#connectionUser").value = cfg?.user || "postgres";
+  $("#connectionPassword").value = cfg?.password || "";
+}
+
+function clearConnectionForm(){
+  setFormFromConfig({ id: "", name: "", host: "localhost", port: "5432", database: "postgres", schema: "public", user: "postgres", password: "" });
+  $$(".saved-connection").forEach(el => el.classList.remove("active"));
+  $("#connectionNameInput").focus();
+}
+
+function updateConnectionUI(){
+  const sDot = $("#sidebarDot"), tDot = $("#topbarDot");
+  if(!connectionConfig || !activeConnection){
+    $("#connectionName").textContent = t("noConnection");
+    $("#connectionInfo").textContent = t("clickToConfig");
+    $("#connectionStatus").textContent = t("notConnected");
+    sDot.className = "connection-dot disconnected";
+    tDot.className = "status-dot disconnected";
+    return;
+  }
+  $("#connectionName").textContent = connectionConfig.name;
+  $("#connectionInfo").textContent = `${connectionConfig.user}@${connectionConfig.host}:${connectionConfig.port}/${connectionConfig.database}`;
+  $("#connectionStatus").textContent = `${t("connectedTo")}${connectionConfig.name}`;
+  sDot.className = "connection-dot";
+  tDot.className = "status-dot";
+}
+
+/*DATABASE STATE*/
+const TYPES = [
+  "int2", "int4", "int8", "serial", "bigserial", "text",
+  "varchar(255)", "numeric", "float8", "bool", "date",
+  "timestamp", "timestamptz", "uuid", "json", "jsonb"
+];
+
+let DB = {};
+let ROWS = {};
+let RELATIONS = [];
+
+let currentView = "query";
+let currentDiagramView = "erd";
+let currentTable = null;
+
+let pendingCellChanges = {};
+let deletedRows = new Set();
+let insertedRows = [];
+
+let schemaSnapshots = {};
+let history = [];
+let selectedRelation = null;
+let uid = 1;
+let logs = [];
+let camera = { x:20, y:20, zoom:1 };
+
+function toast(msg){
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("visible");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove("visible"), 2600);
+}
+
+/*API & FETCH*/
+function apiBase(){
+  return ($("#endpoint")?.value || "/api").replace(/\/$/,"");
+}
+
+async function request(path, statements = [], extra = {}){
+  const url = apiBase() + path;
+  // Передаем только statements (и extra, если переданы дополнительные параметры вроде Key)
+  const payload = { statements, ...extra };
+  const started = performance.now();
+
+  try{
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "Accept":"application/json" },
+      body: JSON.stringify(payload)
+    });
+    const text = await res.text();
+    let json = null;
+    try { json = text ? JSON.parse(text) : null; } catch { json = null; }
+
+    if(!res.ok) throw new Error(json?.message || json?.error || `HTTP ${res.status}`);
+    const elapsed = (performance.now() - started).toFixed(1);
+    addLog(`${new Date().toLocaleTimeString()} POST ${url} ${statements.length} stmt → ${res.status} (${elapsed}ms)`);
+    return { json, response: res, elapsed };
+  }catch(err){
+    addLog(`${new Date().toLocaleTimeString()} POST ${url} ERROR: ${err.message}`);
+    throw err;
+  }
+}
+
+async function loadKey(){
+  const url = apiBase() + "/getKey";
+  const res = await fetch(url, { headers: { "Accept": "application/json" } });
+  addLog(`${new Date().toLocaleTimeString()} GET ${url} → ${res.status}`);
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const raw = await res.json();
+  const schema = normalizeSchemaResponse(raw);
+  if(!schema) throw new Error(t("serverNoTables"));
+
+  importSchema(schema);
+  return schema;
+}
+
+const relationsKey = () =>
+  RELATIONS.filter(r => !r.removed).map(({ id, from, to }) => ({ id, from, to }));
+
+async function connectDatabase(e){
+  e.preventDefault();
+  const errEl = $("#connectionError");
+  const existingId = $("#connectionId").value.trim();
+
+  const cfg = {
+    id: existingId || `conn_${Date.now()}`,
+    name: $("#connectionNameInput").value.trim(),
+    host: $("#connectionHost").value.trim(),
+    port: $("#connectionPort").value.trim(),
+    database: $("#connectionDatabase").value.trim(),
+    schema: $("#connectionSchema").value.trim() || "public",
+    user: $("#connectionUser").value.trim(),
+    password: $("#connectionPassword").value
+  };
+
+  if(!cfg.name || !cfg.host || !cfg.port || !cfg.database || !cfg.user){
+    errEl.textContent = t("fillRequired");
+    errEl.classList.add("visible");
+    return;
+  }
+
+  const btn = $("#connectDatabase");
+  btn.disabled = true;
+  errEl.classList.remove("visible");
+
+  try{
+    const res = await fetch("/api/connect", {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "Accept":"application/json" },
+      body: JSON.stringify({
+        host: cfg.host, port: Number(cfg.port), database: cfg.database,
+        user: cfg.user, password: cfg.password, schema: cfg.schema
+      })
+    });
+
+    const result = await res.json().catch(() => ({}));
+    if(!res.ok) throw new Error(result.error || `HTTP ${res.status}`);
+
+    const exIdx = savedConnections.findIndex(c => c.id === cfg.id || c.name.toLowerCase() === cfg.name.toLowerCase());
+    if(exIdx >= 0){
+      savedConnections[exIdx] = cfg;
+    }else{
+      savedConnections.unshift(cfg);
+    }
+
+    activeConnection = cfg.name;
+    connectionConfig = cfg;
+
+    const schema = normalizeSchemaResponse(result);
+    if(schema) importSchema(schema);
+
+    await loadKey().catch(err => addLog("getKey: " + err.message));
+
+    saveConnectionSettings();
+    updateConnectionUI();
+    renderSavedConnections();
+
+    $("#connectionModal").classList.remove("visible");
+    toast(t("connSuccess", { name: cfg.name }));
+  }catch(err){
+    errEl.textContent = err.message;
+    errEl.classList.add("visible");
+    $("#connectionStatus").textContent = t("connError");
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/*QUERY / CONSOLE*/
+async function executeQuery(){
+  const sql = $("#sql").value.trim();
+  if(!sql) return toast(t("enterSqlQuery"));
+
+  const started = performance.now();
+  setQueryStatus(t("runningText"), "running");
+  $("#runButton").disabled = true;
+
+  try{
+    const res = await request("/query", [sql]);
+    const norm = normalizeQueryResponse(res.json);
+
+    renderResult($("#queryGrid"), norm.columns, norm.rows);
+    const elapsed = (performance.now() - started).toFixed(1);
+    setQueryStatus(t("querySuccess", { rows: norm.rows.length, ms: elapsed }), "success");
+
+    history = [sql, ...history.filter(i => i !== sql)].slice(0, 8);
+    renderHistory();
+    saveConnectionSettings();
+  }catch(err){
+    $("#queryGrid").innerHTML = `<div class="empty">${esc(err.message)}</div>`;
+    setQueryStatus(err.message, "error");
+  }finally{
+    $("#runButton").disabled = false;
+  }
+}
+
+function normalizeQueryResponse(json){
+  if(!json) throw new Error("Empty response from server");
+  const cols = json.columns || json.cols || json.fields || [];
+  const rows = json.rows || json.data || [];
+  const normCols = cols.map(c => Array.isArray(c) ? [c[0], c[1]||"unknown"] : [c.name, c.type||c.dataType||"unknown"]);
+  return { columns: normCols, rows };
+}
+
+function setQueryStatus(text, state = ""){
+  $("#queryMeta").innerHTML = `
+    <span class="result-status ${state}">${esc(text)}</span>
+    <div class="top-spacer"></div>
+    <span>${esc(activeConnection || t("noConnection"))}</span>
+    <span>PostgreSQL</span>
+  `;
+}
+
+function renderHistory(){
+  $("#history").innerHTML = history.map((q, i) => `
+    <button class="history-chip" data-history="${i}" title="${esc(q)}">
+      ${esc(q.replace(/\s+/g," ").slice(0,80))}
+    </button>
+  `).join("");
+}
+
+function renderResult(container, columns, rows){
+  if(!rows.length){
+    container.innerHTML = `<div class="empty">${t("queryNoRows")}</div>`;
+    return;
+  }
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>${columns.map(c => `<th>${esc(c[0])}<span>${esc(c[1])}</span></th>`).join("")}</tr>
+      </thead>
+      <tbody>
+        ${rows.map(row => `<tr>${row.map(v => `<td class="${typeof v === 'number' ? 'number' : ''}">${esc(v)}</td>`).join("")}</tr>`).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+/*DATA VIEW*/
+function renderData(){
+  const table = DB[currentTable];
+  if(!table) return;
+
+  const cols = table.columns.filter(c => !c.deleted);
+  const rows = ROWS[currentTable] || [];
+
+  $("#dataTable").innerHTML = Object.keys(DB)
+    .filter(name => !DB[name].deleted)
+    .map(name => `<option value="${esc(name)}" ${name === currentTable ? 'selected' : ''}>${esc(name)}</option>`)
+    .join("");
+
+  $("#dataMeta").innerHTML = `
+    <span>${rows.length} ${t("rowsCount")}</span>
+    <span>${cols.length} ${t("colsCount")}</span>
+    <div class="top-spacer"></div>
+    <span>${t("changesSavedApi")}</span>
+  `;
+
+  renderEditableGrid($("#dataGrid"), table, cols, rows);
+}
+
+function renderEditableGrid(container, table, columns, rows){
+  if(!rows.length){
+    container.innerHTML = `<div class="empty">${t("noDataRows")}</div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          ${columns.map(c => `<th>${esc(c.name)}<span>${esc(c.type)}</span></th>`).join("")}
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(row => {
+          const id = row[0];
+          const rowKey = `${currentTable}:${id}`;
+          const isDel = deletedRows.has(rowKey);
+
+          return `
+            <tr class="${isDel ? "deleted" : ""}">
+              ${columns.map((col, idx) => {
+                const key = `${currentTable}:${id}:${col.name}`;
+                const changed = Object.prototype.hasOwnProperty.call(pendingCellChanges, key);
+                const val = changed ? pendingCellChanges[key] : row[idx];
+                return `
+                  <td class="editable ${changed ? "changed" : ""} ${typeof val === 'number' ? "number" : ""}"
+                      data-edit-key="${esc(key)}" data-row-id="${esc(id)}" data-column="${esc(col.name)}">
+                    ${esc(val)}
+                  </td>
+                `;
+              }).join("")}
+              <td>
+                <button class="icon-btn danger" data-delete-row="${esc(id)}" title="${t("deleteRowTitle")}">${icon("x")}</button>
+              </td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function sqlValue(v){
+  if(v === null || v === undefined || v === "") return "NULL";
+  if(typeof v === "number" && Number.isFinite(v)) return String(v);
+  const s = String(v);
+  if(/^(true|false)$/i.test(s)) return s.toUpperCase();
+  if(/^-?\d+(\.\d+)?$/.test(s)) return s;
+  return `'${s.replace(/'/g,"''")}'`;
+}
+
+function buildDataSQL(){
+  const out = [];
+  for(const [key, value] of Object.entries(pendingCellChanges)){
+    const [tName, id, col] = key.split(":");
+    out.push(`UPDATE "${tName}" SET "${col}" = ${sqlValue(value)} WHERE "id" = ${sqlValue(id)};`);
+  }
+  for(const rowKey of deletedRows){
+    const [tName, id] = rowKey.split(":");
+    out.push(`DELETE FROM "${tName}" WHERE "id" = ${sqlValue(id)};`);
+  }
+  for(const ins of insertedRows){
+    const tName = DB[ins.table];
+    const cols = tName.columns.filter(c => !c.deleted);
+    out.push(`INSERT INTO "${ins.table}" (${cols.map(c => `"${c.name}"`).join(", ")}) VALUES (${ins.values.map(sqlValue).join(", ")});`);
+  }
+  return out;
+}
+
+/*SCHEMA SQL DIFF (DDL)*/
+function buildSchemaSQL(){
+  const out = [];
+
+  for(const [name, table] of Object.entries(DB)){
+    if(table.deleted){
+      out.push(`DROP TABLE IF EXISTS "${name}" CASCADE;`);
+      continue;
+    }
+
+    const origName = table.originalName || name;
+    const origTable = schemaSnapshots[origName];
+
+    if(!table.isNew && origTable && origName !== name){
+      out.push(`ALTER TABLE "${origName}" RENAME TO "${name}";`);
+    }
+
+    if(table.isNew){
+      const cols = table.columns
+        .filter(c => !c.deleted)
+        .map(c => `  "${c.name}" ${c.type}${c.primary ? " PRIMARY KEY" : ""}`);
+      out.push(`CREATE TABLE "${name}" (\n${cols.join(",\n")}\n);`);
+      continue;
+    }
+
+    for(const col of table.columns){
+      if(col.isNew && !col.deleted){
+        out.push(`ALTER TABLE "${name}" ADD COLUMN "${col.name}" ${col.type}${col.primary ? " PRIMARY KEY" : ""};`);
+      }
+      if(!col.isNew && !col.deleted){
+        const origCol = origTable?.columns?.find(sc => sc.name === (col.originalName || col.name));
+        if(origCol && origCol.name !== col.name){
+          out.push(`ALTER TABLE "${name}" RENAME COLUMN "${origCol.name}" TO "${col.name}";`);
+        }
+        if(origCol && origCol.type !== col.type){
+          out.push(`ALTER TABLE "${name}" ALTER COLUMN "${col.name}" TYPE ${col.type};`);
+        }
+      }
+      if(col.deleted && !col.isNew){
+        const origCol = origTable?.columns?.find(sc => sc.name === (col.originalName || col.name));
+        out.push(`ALTER TABLE "${name}" DROP COLUMN "${origCol?.name || col.name}";`);
+      }
+    }
+  }
+
+  for(const r of RELATIONS){
+    if(r.isNew && !r.removed){
+      const [fT, fC] = r.from.split(".");
+      const [tT, tC] = r.to.split(".");
+      out.push(`ALTER TABLE "${fT}" ADD CONSTRAINT "${r.id}" FOREIGN KEY ("${fC}") REFERENCES "${tT}" ("${tC}") ON DELETE CASCADE;`);
+    }
+    if(r.removed && !r.isNew){
+      const [fT] = r.from.split(".");
+      out.push(`ALTER TABLE "${fT}" DROP CONSTRAINT IF EXISTS "${r.id}";`);
+    }
+  }
+
+  return out;
+}
+
+/*DIAGRAM & ERD*/
+const TABLE_WIDTH = 245;
+const HEADER_HEIGHT = 43;
+const ROW_HEIGHT = 31;
+const TABLE_GAP = 24;
+const DIAGRAM_COLUMNS = 3;
+
+function layoutTables(){
+  const colHeights = Array(DIAGRAM_COLUMNS).fill(30);
+  Object.values(DB).forEach(table => {
+    if(table.deleted) return;
+    const colIdx = colHeights.indexOf(Math.min(...colHeights));
+    const count = table.columns.filter(c => !c.deleted).length;
+    const h = HEADER_HEIGHT + count * ROW_HEIGHT + 33;
+
+    table.x = 30 + colIdx * (TABLE_WIDTH + TABLE_GAP);
+    table.y = colHeights[colIdx];
+    colHeights[colIdx] += h + TABLE_GAP;
+  });
+}
+
+function endpointFor(qualified, side){
+  if(!qualified || !qualified.includes(".")) return null;
+  const [tName, cName] = qualified.trim().split(".");
+
+  // Поиск таблицы без учета регистра
+  const actualTableName = Object.keys(DB).find(k => k.toLowerCase() === tName.toLowerCase());
+  if(!actualTableName) return null;
+  const table = DB[actualTableName];
+
+  // Поиск колонки без учета регистра
+  const idx = table.columns.findIndex(c => c.name.toLowerCase() === cName.toLowerCase());
+  if(idx < 0) return null;
+
+  return {
+    x: table.x + (side === "right" ? TABLE_WIDTH : 0),
+    y: table.y + HEADER_HEIGHT + idx * ROW_HEIGHT + ROW_HEIGHT / 2
+  };
+}
+
+function renderDiagram(){
+  renderCards();
+  renderLinks();
+  updateCamera();
+  renderDiff();
+  updatePendingUI();
+}
+
+function renderCards(){
+  $("#cards").innerHTML = Object.entries(DB).map(([tName, table]) => `
+    <div class="table-card ${table.isNew ? "new" : ""} ${table.deleted ? "removed" : ""}"
+         data-table="${esc(tName)}" style="left:${table.x}px; top:${table.y}px;">
+      <div class="table-header">
+        ${icon("table")}
+        <span class="table-name" ${table.isNew ? 'contenteditable="true"' : ''} spellcheck="false">${esc(tName)}</span>
+        ${table.isNew ? `<span class="new-label">${t("newLabel")}</span>` : ""}
+        <button class="icon-btn danger" data-action="delete-table" title="${t("deleteTableTitle")}">${icon("x")}</button>
+      </div>
+
+      ${table.columns.map((col, idx) => `
+        <div class="column-row ${col.isNew ? "new" : ""} ${col.deleted ? "removed" : ""}"
+             data-table="${esc(tName)}" data-column-index="${idx}">
+          <button class="column-key ${col.primary ? "active" : ""}" data-action="toggle-pk" title="${t("pkTitle")}">
+            ${icon("key")}
+          </button>
+          <span class="column-name" ${col.isNew ? 'contenteditable="true"' : ''} spellcheck="false">${esc(col.name)}</span>
+          <select class="column-type" data-action="change-type">
+            ${[...new Set([...TYPES, col.type])].map(tp => `<option ${tp === col.type ? 'selected' : ''}>${esc(tp)}</option>`).join("")}
+          </select>
+          <button class="icon-btn danger" data-action="delete-column" title="${t("deleteColumnTitle")}">${icon("x")}</button>
+          <i class="connection-handle" data-action="connection-handle" title="${t("pullToLinkTitle")}"></i>
+        </div>
+      `).join("")}
+
+      <button class="table-add-column" data-action="add-column">${icon("plus")} ${t("addColumn")}</button>
+    </div>
+  `).join("");
+}
+
+function renderLinks(){
+  const hitLayer = $("#linkHitLayer");
+  const visibleLayer = $("#linkVisibleLayer");
+  if(!hitLayer || !visibleLayer) return;
+
+  const paths = [];
+
+  for(const r of RELATIONS){
+    if(r.removed || !r.from || !r.to) continue;
+
+    const [fromT] = r.from.split(".");
+    const [toT] = r.to.split(".");
+
+    const actualFrom = Object.keys(DB).find(k => k.toLowerCase() === fromT.toLowerCase());
+    const actualTo = Object.keys(DB).find(k => k.toLowerCase() === toT.toLowerCase());
+    if(!actualFrom || !actualTo) continue;
+
+    const A = DB[actualFrom], B = DB[actualTo];
+    const fromRight = A.x <= B.x;
+    const start = endpointFor(r.from, fromRight ? "right" : "left");
+    const end = endpointFor(r.to, fromRight ? "left" : "right");
+    if(!start || !end) continue;
+
+    const dir = fromRight ? 1 : -1;
+    const bend = Math.max(50, Math.abs(end.x - start.x) * .45);
+    const d = `M ${start.x} ${start.y} C ${start.x + dir * bend} ${start.y}, ${end.x - dir * bend} ${end.y}, ${end.x} ${end.y}`;
+    const isSel = selectedRelation === r.id;
+
+    paths.push({
+      hit: `<path d="${d}" data-relation="${esc(r.id)}" class="hit"/>`,
+      visible: `<path d="${d}" data-relation="${esc(r.id)}" class="${isSel ? "selected" : ""}" marker-start="url(#circleStart)" marker-end="url(#arrowEnd)"/>`
+    });
+  }
+
+  hitLayer.innerHTML = paths.map(p => p.hit).join("");
+  visibleLayer.innerHTML = paths.map(p => p.visible).join("");
+}
+
+function selectRelation(relId, event){
+  const r = RELATIONS.find(i => i.id === relId);
+  if(!r) return;
+  selectedRelation = relId;
+  renderLinks();
+
+  const inspector = $("#relationInspector");
+  const rect = $("#canvas").getBoundingClientRect();
+  const pt = event ? { x: event.clientX - rect.left, y: event.clientY - rect.top } : { x: rect.width/2, y: rect.height/2 };
+
+  inspector.style.left = clamp(pt.x + 12, 10, Math.max(10, rect.width - inspector.offsetWidth - 10)) + "px";
+  inspector.style.top = clamp(pt.y + 12, 10, Math.max(10, rect.height - inspector.offsetHeight - 10)) + "px";
+
+  $("#relationName").textContent = r.id;
+  $("#relationDescription").textContent = `${r.from} → ${r.to}`;
+  inspector.classList.add("visible");
+}
+
+function closeRelationInspector(){
+  selectedRelation = null;
+  $("#relationInspector").classList.remove("visible");
+  renderLinks();
+}
+
+function removeSelectedRelation(){
+  if(!selectedRelation) return;
+  const idx = RELATIONS.findIndex(r => r.id === selectedRelation);
+  if(idx < 0) return;
+
+  const r = RELATIONS[idx];
+  if(r.isNew){
+    RELATIONS.splice(idx, 1);
+  } else {
+    r.removed = true;
+  }
+
+  toast(t("linkDisconnected", { from: r.from, to: r.to }));
+  closeRelationInspector();
+  renderDiagram();
+}
+
+function updateCamera(){
+  $("#world").style.transform = `translate(${camera.x}px,${camera.y}px) scale(${camera.zoom})`;
+  $("#zoomValue").textContent = `${Math.round(camera.zoom * 100)}%`;
+  saveViewSettings();
+}
+
+function setZoom(newZoom, cx = $("#canvas").clientWidth/2, cy = $("#canvas").clientHeight/2){
+  newZoom = clamp(newZoom, .35, 2);
+  const wx = (cx - camera.x) / camera.zoom;
+  const wy = (cy - camera.y) / camera.zoom;
+  camera.zoom = newZoom;
+  camera.x = cx - wx * newZoom;
+  camera.y = cy - wy * newZoom;
+  updateCamera();
+}
+
+function fitDiagram(){
+  const entries = Object.values(DB).filter(t => !t.deleted);
+  if(!entries.length) return;
+  const canvas = $("#canvas");
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const minX = Math.min(...entries.map(t => t.x));
+  const minY = Math.min(...entries.map(t => t.y));
+  const maxX = Math.max(...entries.map(t => t.x + TABLE_WIDTH));
+  const maxY = Math.max(...entries.map(t => t.y + HEADER_HEIGHT + t.columns.length * ROW_HEIGHT + 33));
+
+  const cw = maxX - minX, ch = maxY - minY;
+  const zoom = clamp(Math.min((w - 80) / cw, (h - 80) / ch), .45, 1.25);
+  camera.zoom = zoom;
+  camera.x = w/2 - (minX + cw/2) * zoom;
+  camera.y = h/2 - (minY + ch/2) * zoom;
+  updateCamera();
+}
+
+let connectionDrag = null;
+let tableDrag = null;
+let pan = null;
+
+$("#canvas").addEventListener("pointerdown", event => {
+  const handle = event.target.closest("[data-action='connection-handle']");
+  if(handle){
+    const row = handle.closest(".column-row");
+    const tName = row.dataset.table;
+    const col = DB[tName]?.columns[Number(row.dataset.columnIndex)];
+    if(col){
+      const src = `${tName}.${col.name}`;
+      connectionDrag = {
+        source: src,
+        sourcePoint: endpointFor(src, "right"),
+        rect: $("#canvas").getBoundingClientRect()
+      };
+      event.preventDefault();
+    }
+    return;
+  }
+
+  const header = event.target.closest(".table-header");
+  if(header && !event.target.closest("button,[contenteditable]")){
+    const card = header.closest(".table-card");
+    const table = DB[card?.dataset.table];
+    if(table){
+      tableDrag = { table, card, startX: event.clientX, startY: event.clientY, tx: table.x, ty: table.y };
+      event.preventDefault();
+    }
+    return;
+  }
+
+  if(event.target.closest(".table-card, .relation-inspector")) return;
+
+  pan = { x: event.clientX, y: event.clientY, cx: camera.x, cy: camera.y };
+  $("#canvas").classList.add("dragging");
+});
+
+window.addEventListener("pointermove", event => {
+  if(connectionDrag){
+    const { sourcePoint, rect } = connectionDrag;
+    const x = (event.clientX - rect.left - camera.x) / camera.zoom;
+    const y = (event.clientY - rect.top - camera.y) / camera.zoom;
+    $("#tempLink").setAttribute("d", `M ${sourcePoint.x} ${sourcePoint.y} L ${x} ${y}`);
+    return;
+  }
+  if(tableDrag){
+    tableDrag.table.x = tableDrag.tx + (event.clientX - tableDrag.startX) / camera.zoom;
+    tableDrag.table.y = tableDrag.ty + (event.clientY - tableDrag.startY) / camera.zoom;
+    tableDrag.card.style.left = tableDrag.table.x + "px";
+    tableDrag.card.style.top = tableDrag.table.y + "px";
+    renderLinks();
+    return;
+  }
+  if(pan){
+    camera.x = pan.cx + event.clientX - pan.x;
+    camera.y = pan.cy + event.clientY - pan.y;
+    updateCamera();
+  }
+});
+
+window.addEventListener("pointerup", event => {
+  if(connectionDrag){
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".column-row");
+    $("#tempLink").setAttribute("d", "");
+    if(target){
+      const tTable = target.dataset.table;
+      const tCol = DB[tTable]?.columns[Number(target.dataset.columnIndex)];
+      if(tCol){
+        const targetName = `${tTable}.${tCol.name}`;
+        if(connectionDrag.source !== targetName && !RELATIONS.some(r => r.from === connectionDrag.source && r.to === targetName && !r.removed)){
+          const [sTable, sCol] = connectionDrag.source.split(".");
+          let id = `fk_${sTable}_${sCol}`;
+          if(RELATIONS.some(r => r.id === id)) id += `_${uid++}`;
+          RELATIONS.push({
+            id,
+            from: connectionDrag.source,
+            to: targetName,
+            isNew: true,
+            removed: false
+          });
+          toast(t("linkCreated", { from: connectionDrag.source, to: targetName }));
+          renderDiagram();
+        }
+      }
+    }
+    connectionDrag = null;
+  }
+  if(tableDrag){
+    tableDrag = null;
+    saveTablePositions();
+  }
+  if(pan){
+    pan = null;
+    $("#canvas").classList.remove("dragging");
+  }
+});
+
+$("#canvas").addEventListener("wheel", event => {
+  event.preventDefault();
+  if(event.ctrlKey){
+    const rect = $("#canvas").getBoundingClientRect();
+    setZoom(camera.zoom * (event.deltaY < 0 ? 1.06 : .94), event.clientX - rect.left, event.clientY - rect.top);
+  }else{
+    camera.x -= event.deltaX;
+    camera.y -= event.deltaY;
+    updateCamera();
+  }
+}, { passive:false });
+
+/* RENAME & SCHEMA ACTIONS*/
+function renameTable(oldName, newName){
+  newName = newName.trim().toLowerCase().replace(/[^\w]+/g,"_");
+  if(!newName || newName === oldName) return renderAll();
+  if(DB[newName]){
+    toast(t("tableAlreadyExists", { name: newName }));
+    return renderAll();
+  }
+
+  const table = DB[oldName];
+  if(!table) return;
+  table.originalName ||= oldName;
+  DB[newName] = table;
+  delete DB[oldName];
+
+  ROWS[newName] = ROWS[oldName] || [];
+  delete ROWS[oldName];
+
+  RELATIONS.forEach(r => {
+    r.from = r.from.replace(`${oldName}.`, `${newName}.`);
+    r.to = r.to.replace(`${oldName}.`, `${newName}.`);
+  });
+
+  if(currentTable === oldName) currentTable = newName;
+  renderAll();
+  saveTablePositions();
+}
+
+function renameColumn(tableName, idx, newName){
+  newName = newName.trim().toLowerCase().replace(/[^\w]+/g,"_");
+  const table = DB[tableName], col = table?.columns[idx];
+  if(!col || !newName || newName === col.name) return renderAll();
+
+  const old = col.name;
+  col.name = newName;
+
+  RELATIONS.forEach(r => {
+    if(r.from === `${tableName}.${old}`) r.from = `${tableName}.${newName}`;
+    if(r.to === `${tableName}.${old}`) r.to = `${tableName}.${newName}`;
+  });
+
+  renderAll();
+  saveTablePositions();
+}
+
+function addTable(){
+  let name;
+  do { name = `new_table_${uid++}`; } while(DB[name]);
+  DB[name] = {
+    x: (170 - camera.x) / camera.zoom,
+    y: (130 - camera.y) / camera.zoom,
+    isNew: true,
+    deleted: false,
+    columns: [{ name: "id", type: "int8", primary: true, isNew: true, deleted: false }]
+  };
+  ROWS[name] = [];
+  toast(t("tableCreated", { name }));
+  renderAll();
+  saveTablePositions();
+}
+
+function addColumn(tableName){
+  const table = DB[tableName];
+  if(!table) return;
+  table.columns.push({ name: `column_${uid++}`, type: "text", primary: false, isNew: true, deleted: false });
+  renderAll();
+  saveTablePositions();
+}
+
+function togglePrimaryKey(tableName, idx){
+  const col = DB[tableName]?.columns[idx];
+  if(col){ col.primary = !col.primary; renderAll(); }
+}
+
+function deleteColumn(tableName, idx){
+  const col = DB[tableName]?.columns[idx];
+  if(!col) return;
+  if(col.isNew) DB[tableName].columns.splice(idx, 1);
+  else col.deleted = !col.deleted;
+  renderAll();
+}
+
+function deleteTable(tableName){
+  const table = DB[tableName];
+  if(!table) return;
+  if(table.isNew){
+    delete DB[tableName];
+    delete ROWS[tableName];
+    RELATIONS = RELATIONS.filter(r => !r.from.startsWith(`${tableName}.`) && !r.to.startsWith(`${tableName}.`));
+  }else{
+    table.deleted = !table.deleted;
+  }
+  renderAll();
+}
+
+/* DIFF, LOGS, PENDING, DISCARD, APPLY */
+function highlightSQL(sql){
+  return esc(sql).replace(/\b(CREATE|TABLE|ALTER|ADD|COLUMN|DROP|PRIMARY|KEY|FOREIGN|REFERENCES|CONSTRAINT|INSERT|INTO|VALUES|UPDATE|SET|DELETE|FROM|WHERE|SELECT|ORDER|BY|LIMIT|CASCADE)\b/gi, `<span class="keyword">$1</span>`);
+}
+
+function renderDiff(){
+  const stmts = buildSchemaSQL();
+  if(!stmts.length){
+    $("#diffCode").innerHTML = `<span class="comment">${t("noChanges")}</span>`;
+    $("#sendSchema").disabled = true;
+  }else{
+    $("#diffCode").innerHTML = stmts.map(highlightSQL).join("\n\n");
+    $("#sendSchema").disabled = false;
+  }
+  $("#logs").innerHTML = logs.map(l => `<div>${esc(l)}</div>`).join("");
+}
+
+function addLog(msg){
+  logs.unshift(msg);
+  logs = logs.slice(0, 8);
+  if($("#logs")) $("#logs").innerHTML = logs.map(l => `<div>${esc(l)}</div>`).join("");
+}
+
+function pendingStatements(){
+  if(currentView === "data") return buildDataSQL();
+  if(currentView === "diagram" && currentDiagramView === "erd") return buildSchemaSQL();
+  return [];
+}
+
+function updatePendingUI(){
+  const count = pendingStatements().length;
+  $("#pendingCount").textContent = (count === 1) ? t("changesCount", { count }) : t("changesCountPlural", { count });
+  $("#pendingBar").classList.toggle("visible", count > 0 && (currentView === "data" || currentView === "diagram"));
+}
+
+function snapshotSchema(){
+  schemaSnapshots = {};
+  for(const [name, table] of Object.entries(DB)){
+    table.originalName = name;
+    table.columns.forEach(c => { c.originalName = c.name; });
+    schemaSnapshots[name] = JSON.parse(JSON.stringify(table));
+  }
+  schemaSnapshots.__relations = JSON.parse(JSON.stringify(RELATIONS));
+}
+
+function restoreSchema(){
+  for(const k of Object.keys(DB)) delete DB[k];
+  for(const [k, v] of Object.entries(schemaSnapshots)){
+    if(k === "__relations") continue;
+    DB[k] = JSON.parse(JSON.stringify(v));
+  }
+  RELATIONS = JSON.parse(JSON.stringify(schemaSnapshots.__relations || []));
+  closeRelationInspector();
+  renderAll();
+}
+
+async function loadKey(){
+  const url = apiBase() + "/getKey";
+  const res = await fetch(url, { headers: { "Accept": "application/json" } });
+  addLog(`${new Date().toLocaleTimeString()} GET ${url} → ${res.status}`);
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const data = await res.json();
+  console.log("[UIXDB] Ответ от getKey:", data);
+
+
+  const list = Array.isArray(data.Key) ? data.Key
+             : Array.isArray(data.relations) ? data.relations
+             : Array.isArray(data.Relations) ? data.Relations
+             : (Array.isArray(data) ? data : []);
+
+  RELATIONS = list.map(r => ({
+    id: r.id || `fk_${uid++}`,
+    from: r.from,
+    to: r.to,
+    isNew: false,
+    removed: false
+  })).filter(r => r.from && r.to);
+
+  console.log(`[UIXDB] Загружено связей: ${RELATIONS.length}`, RELATIONS);
+
+  snapshotSchema();
+  renderDiagram();
+  return RELATIONS;
+}
+
+function applyDataLocally(){
+  for(const [key, value] of Object.entries(pendingCellChanges)){
+    const [tName, id, col] = key.split(":");
+    const table = DB[tName];
+    const cIdx = table.columns.findIndex(c => c.name === col);
+    const row = (ROWS[tName] || []).find(r => String(r[0]) === String(id));
+    if(row && cIdx >= 0){
+      const type = table.columns[cIdx].type;
+      if(["int2","int4","int8","serial","bigserial","numeric","float8"].includes(type)){
+        row[cIdx] = Number(value);
+      }else if(value === "" || value === "NULL"){
+        row[cIdx] = null;
+      }else{
+        row[cIdx] = value;
+      }
+    }
+  }
+  for(const rowKey of deletedRows){
+    const [tName, id] = rowKey.split(":");
+    ROWS[tName] = (ROWS[tName] || []).filter(r => String(r[0]) !== String(id));
+  }
+  for(const ins of insertedRows){
+    ROWS[ins.table].push(ins.values);
+  }
+  pendingCellChanges = {};
+  deletedRows.clear();
+  insertedRows = [];
+}
+
+function discardChanges(){
+  if(currentView === "data"){
+    pendingCellChanges = {};
+    deletedRows.clear();
+    insertedRows = [];
+    renderAll();
+    toast(t("dataChangesDiscarded"));
+  }else if(currentView === "diagram"){
+    restoreSchema();
+    toast(t("schemaChangesDiscarded"));
+  }
+}
+
+function addRow(){
+  const table = DB[currentTable];
+  if(!table) return;
+  const rows = ROWS[currentTable] || [];
+  const maxId = rows.reduce((max, r) => Math.max(max, Number(r[0]) || 0), 0);
+  const values = table.columns.filter(c => !c.deleted).map((c, i) => i === 0 ? maxId + 1 : null);
+  insertedRows.push({ table: currentTable, values });
+  rows.push(values);
+  renderAll();
+  toast(t("rowAdded"));
+}
+
+function startCellEdit(cell){
+  if(cell.querySelector("input")) return;
+  const key = cell.dataset.editKey;
+  const oldVal = pendingCellChanges[key] ?? cell.textContent.trim();
+  const input = document.createElement("input");
+  input.value = oldVal === "NULL" ? "" : oldVal;
+  cell.textContent = "";
+  cell.appendChild(input);
+  input.focus();
+  input.select();
+
+  const finish = save => {
+    if(!input.isConnected) return;
+    if(save && input.value !== String(oldVal)){
+      pendingCellChanges[key] = input.value;
+    }
+    renderAll();
+  };
+
+  input.addEventListener("keydown", e => {
+    if(e.key === "Enter"){ e.preventDefault(); finish(true); }
+    if(e.key === "Escape"){ e.preventDefault(); finish(false); }
+  });
+  input.addEventListener("blur", () => finish(true), { once: true });
+}
+
+function importSchema(data){
+  if(!data || !Array.isArray(data.tables)) return;
+  DB = {};
+  ROWS = {};
+  RELATIONS = [];
+
+  for(const [idx, tName] of data.tables.entries()){
+    DB[tName.name] = {
+      x: 60 + (idx % 3) * 350,
+      y: 60 + Math.floor(idx / 3) * 280,
+      isNew: false,
+      deleted: false,
+      columns: (tName.columns || []).map(c => ({
+        name: c.name,
+        originalName: c.name,
+        type: c.type || "text",
+        primary: Boolean(c.primary || c.pk),
+        isNew: false,
+        deleted: false
+      }))
+    };
+    ROWS[tName.name] = tName.rows || [];
+  }
+
+  layoutTables();
+  restoreTablePositions();
+  currentTable = DB[currentTable] ? currentTable : Object.keys(DB)[0] || null;
+
+  if(Array.isArray(data.relations)){
+    RELATIONS = data.relations.map(r => ({
+      id: r.id || `fk_${uid++}`,
+      from: r.from,
+      to: r.to,
+      isNew: false,
+      removed: false
+    }));
+  }
+
+  snapshotSchema();
+  renderAll();
+  if(!Object.keys(readSettings().positions?.[connectionKey()] || {}).length){
+    requestAnimationFrame(fitDiagram);
+  }
+}
+
+function normalizeSchemaResponse(data){
+  if(!data) return null;
+
+  const relations = Array.isArray(data.relations) ? data.relations
+                  : Array.isArray(data.Key)       ? data.Key
+                  : [];
+
+  if(Array.isArray(data.tables)){
+    return { tables: data.tables, relations };
+  }
+
+  const map = data.tables || data.table?.TablesMap || data.table?.tablesMap || data.tablesMap;
+  if(!map || typeof map !== "object") return null;
+
+  return {
+    tables: Object.entries(map).map(([name, cols]) => ({
+      name,
+      columns: (Array.isArray(cols) ? cols : []).map(c => ({
+        name: c.name,
+        type: c.type || "text",
+        primary: Boolean(c.pk ?? c.primary)
+      })),
+      rows: []
+    })),
+    relations
+  };
+}
+
+/* VIEWS & SIDEBAR*/
+function renderSidebar(){
+  const search = $("#tableSearch").value.trim().toLowerCase();
+  const tables = Object.entries(DB).filter(([name, tName]) => !tName.deleted && name.toLowerCase().includes(search));
+
+  $("#schemaTree").innerHTML = tables.map(([name, tName]) => {
+    const rows = ROWS[name]?.length || 0;
+    return `
+      <div class="schema-section">
+        <div class="schema-row table-row ${currentTable === name ? "active" : ""}" data-select-table="${esc(name)}">
+          ${icon("table")}
+          <span class="grow"><span>${esc(name)}</span></span>
+          <small>${rows}</small>
+        </div>
+        <div class="schema-indent">
+          ${tName.columns.filter(c => !c.deleted).map(c => `
+            <div class="schema-row">
+              <span class="pk-icon">${c.primary ? icon("key") : ""}</span>
+              <span class="grow"><span>${esc(c.name)}</span></span>
+              <small class="type">${esc(c.type)}</small>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  $("#sidebarTableCount").textContent = tables.length;
+}
+
+function renderAll(){
+  renderSidebar();
+  renderData();
+  renderDiagram();
+  updatePendingUI();
+}
+
+function setView(view){
+  currentView = view;
+  const views = ["query", "data", "diagram"];
+  $("#viewSwitcher").style.setProperty("--index", views.indexOf(view));   $$("#viewSwitcher button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  $("#queryView").classList.toggle("active", view === "query");
+  $("#dataView").classList.toggle("active", view === "data");
+  $("#diagramView").classList.toggle("active", view === "diagram");   if(view === "diagram") requestAnimationFrame(renderDiagram);   updatePendingUI();   saveViewSettings(); }  function setDiagramView(view){   currentDiagramView = view;   $$(".diagram-tabs button").forEach(b => b.classList.toggle("active", b.dataset.diagramView === view));
+  $("#canvas").style.display = view === "erd" ? "" : "none";
+  $("#diffView").classList.toggle("visible", view === "diff");
+  $("#relationInspector").classList.remove("visible");   updatePendingUI();   saveViewSettings(); }  document.addEventListener("click", event => {   const target = event.target;    const connSelect = target.closest("[data-action='pick-conn']");   if(connSelect){     const id = connSelect.dataset.id;     const profile = savedConnections.find(c => c.id === id);     if(profile){       setFormFromConfig(profile);       $$(".saved-connection").forEach(el => el.classList.toggle("active", el.dataset.id === id));
+    }
+    return;
+  }
+
+  const connDelete = target.closest("[data-action='delete-conn']");
+  if(connDelete){
+    event.stopPropagation();
+    const id = connDelete.dataset.id;
+    const idx = savedConnections.findIndex(c => c.id === id);
+    if(idx >= 0){
+      const delName = savedConnections[idx].name;
+      savedConnections.splice(idx, 1);
+      if(activeConnection === delName){
+        activeConnection = savedConnections[0]?.name || null;
+        connectionConfig = savedConnections[0] || null;
+      }
+      saveConnectionSettings();
+      updateConnectionUI();
+      renderSavedConnections($("#searchConnections").value);
+      toast(t("profileDeleted", { name: delName }));
+    }
+    return;
+  }
+
+  const vBtn = target.closest("[data-view]");
+  if(vBtn){ setView(vBtn.dataset.view); return; }
+
+  const hBtn = target.closest("[data-history]");
+  if(hBtn){
+    $("#sql").value = history[Number(hBtn.dataset.history)] || "";
+    $("#sql").focus();
+    return;
+  }
+
+  const tBtn = target.closest("[data-select-table]");
+  if(tBtn){
+    currentTable = tBtn.dataset.selectTable;
+    saveViewSettings();
+    if(currentView !== "data") setView("data");
+    renderAll();
+    return;
+  }
+
+  const dTab = target.closest("[data-diagram-view]");
+  if(dTab){ setDiagramView(dTab.dataset.diagramView); return; }
+
+  const relHit = target.closest("#linkHitLayer path[data-relation]");
+  if(relHit){ selectRelation(relHit.dataset.relation, event); return; }
+
+  const action = target.closest("[data-action]");
+  if(action){
+    const aName = action.dataset.action;
+    const card = action.closest(".table-card");
+    const row = action.closest(".column-row");
+    const tName = card?.dataset.table || row?.dataset.table;
+    const cIdx = row ? Number(row.dataset.columnIndex) : -1;
+
+    if(aName === "delete-table"){ deleteTable(tName); return; }
+    if(aName === "add-column"){ addColumn(tName); return; }
+    if(aName === "toggle-pk"){ togglePrimaryKey(tName, cIdx); return; }
+    if(aName === "delete-column"){ deleteColumn(tName, cIdx); return; }
+  }
+
+  const delRow = target.closest("[data-delete-row]");
+  if(delRow){
+    const key = `${currentTable}:${delRow.dataset.deleteRow}`;
+    if(deletedRows.has(key)) deletedRows.delete(key);
+    else deletedRows.add(key);
+    renderAll();
+    return;
+  }
+
+  const editable = target.closest("td.editable");
+  if(editable){ startCellEdit(editable); return; }
+});
+
+/* Change Type in ERD */
+document.addEventListener("change", event => {
+  const target = event.target;
+  if(target.dataset.action === "change-type"){
+    const row = target.closest(".column-row");
+    const tName = row?.dataset.table;
+    const cIdx = Number(row?.dataset.columnIndex);
+    if(DB[tName]?.columns[cIdx]){
+      DB[tName].columns[cIdx].type = target.value;
+      renderDiff();
+      updatePendingUI();
+    }
+  }
+});
+
+/* Rename on Focusout */
+document.addEventListener("focusout", event => {
+  const el = event.target;
+  if(!el.isContentEditable) return;
+
+  const card = el.closest(".table-card");
+  if(!card) return;
+  const tName = card.dataset.table;
+
+  if(el.classList.contains("table-name")){
+    renameTable(tName, el.textContent);
+  } else if(el.classList.contains("column-name")){
+    const row = el.closest(".column-row");
+    if(row) renameColumn(tName, Number(row.dataset.columnIndex), el.textContent);
+  }
+});
+
+/* Language picker */
+$("#langPicker").addEventListener("change", e => {
+  setLanguage(e.target.value);
+});
+
+$("#searchConnections").addEventListener("input", e => renderSavedConnections(e.target.value));
+$("#btnNewConnection").addEventListener("click", clearConnectionForm);
+$("#dataTable").addEventListener("change", e => { currentTable = e.target.value; saveViewSettings(); renderAll(); });
+$("#tableSearch").addEventListener("input", renderSidebar);
+
+$("#runButton").addEventListener("click", executeQuery);
+$("#clearSql").addEventListener("click", () => { $("#sql").value = ""; $("#sql").focus(); });
+$("#explainButton").addEventListener("click", async () => {
+  const s = $("#sql").value.trim();
+  if(!s) return;
+  $("#sql").value = `EXPLAIN ANALYZE\n${s}`;
+  await executeQuery();
+});
+
+$("#themeButton").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light");
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  writeSettings({ theme: next });
+});
+
+$("#refreshSchema").addEventListener("click", async () => {
+  try{
+    await loadKey();
+    toast(t("schemaUpdated"));
+  }catch(e){
+    toast(`Error: ${e.message}`);
+  }
+});
+
+$("#connectionButton").addEventListener("click", () => {
+  if(connectionConfig){
+    setFormFromConfig(connectionConfig);
+  }else if(savedConnections.length){
+    setFormFromConfig(savedConnections[0]);
+  }
+  renderSavedConnections();
+  $("#connectionError").classList.remove("visible");
+  $("#connectionModal").classList.add("visible");
+});
+
+$("#closeConnection").addEventListener("click", () => $("#connectionModal").classList.remove("visible"));
+$("#cancelConnection").addEventListener("click", () => $("#connectionModal").classList.remove("visible"));
+$("#connectionForm").addEventListener("submit", connectDatabase);
+
+$("#addRow").addEventListener("click", addRow);
+$("#addTable").addEventListener("click", addTable);
+$("#zoomIn").addEventListener("click", () => setZoom(camera.zoom * 1.15));
+$("#zoomOut").addEventListener("click", () => setZoom(camera.zoom * .87));
+$("#fitDiagram").addEventListener("click", fitDiagram);
+$("#closeRelation").addEventListener("click", closeRelationInspector);
+$("#removeRelation").addEventListener("click", removeSelectedRelation);
+$("#relationSql").addEventListener("click", () => {
+  const r = RELATIONS.find(i => i.id === selectedRelation);
+  if(!r) return;
+  const [fT, fC] = r.from.split(".");
+  const [tT, tC] = r.to.split(".");
+  $("#sql").value = `ALTER TABLE "${fT}" ADD CONSTRAINT "${r.id}" FOREIGN KEY ("${fC}") REFERENCES "${tT}" ("${tC}");`;
+  setView("query");
+  closeRelationInspector();
+});
+
+$("#sendSchema").addEventListener("click", async () => {
+  const stmts = buildSchemaSQL();
+  if(!stmts.length) return;
+  try{
+    await request("/schema", stmts, { action: "apply", Key: relationsKey() });
+    await loadKey().catch(() => snapshotSchema());
+    toast(`${t("sendSchema")}: ${stmts.length} SQL`);
+    renderAll();
+    setDiagramView("diff");
+  }catch(e){
+    toast(`Error: ${e.message}`);
+  }
+});
+
+$("#applyChanges").addEventListener("click", applyChanges);
+$("#discardChanges").addEventListener("click", discardChanges);
+$("#showPendingSql").addEventListener("click", () => {
+  if(currentView === "diagram"){
+    setDiagramView("diff");
+  }else{
+    $("#sql").value = buildDataSQL().join("\n");
+    setView("query");
+  }
+});
+
+$("#mobileMenu").addEventListener("click", () => {
+  $("#sidebar").classList.add("open");
+  $("#mobileOverlay").classList.add("visible");
+});
+$("#mobileOverlay").addEventListener("click", () => {
+  $("#sidebar").classList.remove("open");
+  $("#mobileOverlay").classList.remove("visible");
+});
+
+document.addEventListener("keydown", event => {
+  if(event.key === "Enter" && event.target.isContentEditable){
+    event.preventDefault();
+    event.target.blur();
+    return;
+  }
+  if(event.key === "/" && !["INPUT","TEXTAREA"].includes(document.activeElement.tagName)){
+    event.preventDefault();
+    $("#tableSearch").focus();
+  }
+  if((event.metaKey || event.ctrlKey) && event.key === "Enter" && currentView === "query"){
+    event.preventDefault();
+    executeQuery();
+  }
+  if(event.key === "Escape"){
+    closeRelationInspector();
+    $("#connectionModal").classList.remove("visible");
+  }
+});
+
+function initialize(){
+  restoreFrontendSettings();
+  updateStaticTranslations();
+  renderHistory();
+  renderAll();
+  setQueryStatus(t("readyToRun"), "");
+  updateCamera();
+  setView(currentView);
+  if(currentView === "diagram") setDiagramView(currentDiagramView);
+  if(connectionConfig) loadKey().catch(() => {});
+}
+
+initialize();
+</script>
+</body>
+</html>
